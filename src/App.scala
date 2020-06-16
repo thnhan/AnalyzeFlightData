@@ -588,7 +588,7 @@ class UI extends MainFrame {
       .read
       .format("csv")
       .option("header", value = true)
-      .load("data/flights.csv")
+      .load(path_file_data)
 
     /*
     Print data in commentField
