@@ -6,6 +6,8 @@ import org.apache.spark.graphx.{Edge, Graph, VertexId}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
+
+
 import scala.util.Try
 
 class UI extends MainFrame {
@@ -279,7 +281,7 @@ class UI extends MainFrame {
         var index = 0
         for (x <- impotant.filter(v => airportsMap(v._1) != "nowhere").take(num)) {
           index += 1
-          var inf1 = index.toString()
+          var inf1 = index.toString
           var len = inf1.length
           for (i <- 1 to (6 - len)) {
             inf1 = " " + inf1
