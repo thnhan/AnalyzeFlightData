@@ -108,13 +108,6 @@ object MLApp {
     val predictionDF = pipelineModel.transform(testData.na.drop()).select("label", "probability", "prediction")
     predictionDF.show(truncate = false)
 
-    //////    val correct = ip.filter($"label" === $"prediction").count()
-    ////    ip.printSchema()
-    ////    ip.show(374048)
-    ////    ip.filter($"label".isNaN).show()
-    ////    print(ip.filter("label = prediction").count())
-    ////    println(correct.toDouble/totalpre.toDouble)
-
     val evaluator = new BinaryClassificationEvaluator()
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
@@ -123,23 +116,31 @@ object MLApp {
     val acc = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
     println(s"ACCURACY: $acc%")
 
-    /* Parameters tuning with CrossValidator and Paramgrid */
+    /* Parameters tuning with CrossValidator and ParamGridBuilder */
     val paramGrid = new ParamGridBuilder()
       .addGrid(rf.maxBins, Array(10000, 11000))
 //      .addGrid(rf.maxDepth, Array(2, 5, 10))
-//      .addGrid(rf.numTrees, Array(100, 200))
+      .addGrid(rf.numTrees, Array(100, 200, 300))
       .addGrid(rf.impurity, Array("entropy", "gini"))
       .build()
 
-    val crossval = new CrossValidator()
+    val validator = new CrossValidator()
       .setEstimator(pipeline)
       .setEvaluator(evaluator)
       .setEstimatorParamMaps(paramGrid)
-//.setNumFolds(3)
-    val pipelineGrid = crossval.fit(trainingData)
+    //.setNumFolds(3)
+    val pipelineGrid = validator.fit(trainingData)
     val predictions = pipelineGrid.transform(testData)
     val aucROC = evaluator.evaluate(predictions)
     println(aucROC)
     pipeline.fit(trainingData)
+
+    /* Calculating TN, FN, TP, FP */
+/*    val correct = ip.filter($"label" === $"prediction").count()
+    ip.printSchema()
+    ip.show(374048)
+    ip.filter($"label".isNaN).show()
+    print(ip.filter("label = prediction").count())
+    println(correct.toDouble / totalpre.toDouble)*/
   }
 }
