@@ -1,4 +1,5 @@
 import org.apache.spark.graphx._
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 object AirportGraph {
   def parseFlight(line: Array[String]): Global.Flight = {
@@ -37,6 +38,40 @@ object AirportGraph {
     )
   }
 
+  val schema: StructType = new StructType()
+    .add("YEAR", IntegerType)
+    .add("MONTH", IntegerType)
+    .add("DAY", IntegerType)
+    .add("DAY_OF_WEEK", IntegerType)
+    .add("AIRLINE", StringType)
+    .add("FLIGHT_NUMBER", StringType)
+    .add("TAIL_NUMBER", StringType)
+    .add("id", StringType, nullable = false)
+    .add("DESTINATION_AIRPORT", StringType, nullable = false)
+    .add("SCHEDULED_DEPARTURE", StringType)
+    .add("DEPARTURE_TIME", StringType)
+    .add("DEPARTURE_DELAY", StringType)
+    .add("TAXI_OUT", StringType)
+    .add("WHEELS_OFF", StringType)
+    .add("SCHEDULED_TIME", StringType)
+    .add("ELAPSED_TIME", StringType)
+    .add("AIR_TIME", StringType)
+    .add("DISTANCE", IntegerType, nullable = false)
+    .add("WHEELS_ON", StringType)
+    .add("TAXI_IN", StringType)
+    .add("SCHEDULED_ARRIVAL", StringType)
+    .add("ARRIVAL_TIME", StringType)
+    .add("ARRIVAL_DELAY", StringType)
+    .add("DIVERTED", StringType)
+    .add("CANCELLED", StringType)
+    .add("CANCELLATION_REASON", StringType)
+    .add("AIR_SYSTEM_DELAY", StringType)
+    .add("SECURITY_DELAY", StringType)
+    .add("AIRLINE_DELAY", StringType)
+    .add("LATE_AIRCRAFT_DELAY", StringType)
+    .add("WEATHER_DELAY", StringType)
+
+
   def parseFlight1(line: Array[String]): Global.Flight1 = {
     Global.Flight1(line(0), line(1), line(2), line(3), line(4), line(5), line(6).toInt)
   }
@@ -68,7 +103,7 @@ object AirportGraph {
     sssp
   }
 
-  def getMaxDegree(graph: Graph[String, Int]) = {
+  def getMaxDegree(graph: Graph[String, Int]): Array[(VertexId, PartitionID)] = {
     def maxVertex(a: (VertexId, Int), b: (VertexId, Int)): (VertexId, Int) = {
       if (a._2 > b._2) a else b
     }

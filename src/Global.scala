@@ -1,3 +1,5 @@
+import org.apache.spark.sql.types.{ByteType, DoubleType, IntegerType, StringType, StructField, StructType}
+
 case object Global {
   val num_defaut_label: String = "10"
   val path_file_data: String = "data/flights_reduce.csv"
@@ -13,6 +15,75 @@ case object Global {
     "Find paths with the lowest flight costs",
     "Find the airport with the lowest flight costs"
   )
+
+  case class FlightDelay
+  (
+    num: Int,
+    no: Int,
+    year: Int,
+    month: Integer,
+    dayofmonth: Byte,
+    dayofweek: Byte,
+    deptime: Double,
+    crsdepTime: Double,
+    arrtime: Double,
+    crsarrtime: Double,
+    uniquecarrier: String,
+    flightnum: String,
+    tailnum: String,
+    actualelapsedtime: Double,
+    CRSElapsedTime: Double,
+    AirTime: Double,
+    ArrDelay: Double,
+    DepDelay: Double,
+    Origin: String,
+    Dest: String,
+    Distance: Double,
+    TaxiIn: String,
+    TaxiOut: String,
+    Cancelled: String,
+    CancellationCode: String,
+    Diverted: String,
+    CarrierDelay: String,
+    WeatherDelay: String,
+    NASDelay: String,
+    SecurityDelay: String,
+    LateAircraftDelay: String
+  ) extends Serializable
+
+  val schema: StructType = StructType(Array(
+    StructField("num", IntegerType),
+    StructField("no", IntegerType),
+    StructField("year", IntegerType),
+    StructField("month", IntegerType),
+    StructField("dayofmonth", ByteType),
+    StructField("dayofweek", ByteType),
+    StructField("DepTime", DoubleType),
+    StructField("CRSDepTime", DoubleType),
+    StructField("ArrTime", DoubleType),
+    StructField("CRSArrTime", DoubleType),
+    StructField("UniqueCarrier", StringType),
+    StructField("FlightNum", StringType),
+    StructField("TailNum", StringType),
+    StructField("ActualElapsedTime", DoubleType),
+    StructField("CRSElapsedTime", DoubleType),
+    StructField("AirTime", DoubleType),
+    StructField("ArrDelay", DoubleType),
+    StructField("DepDelay", DoubleType),
+    StructField("Origin", StringType),
+    StructField("Dest", StringType),
+    StructField("Distance", DoubleType),
+    StructField("TaxiIn", StringType),
+    StructField("TaxiOut", StringType),
+    StructField("Cancelled", StringType),
+    StructField("CancellationCode", StringType),
+    StructField("Diverted", StringType),
+    StructField("CarrierDelay", StringType),
+    StructField("WeatherDelay", StringType),
+    StructField("NASDelay", StringType),
+    StructField("SecurityDelay", StringType),
+    StructField("LateAircraftDelay", StringType)
+  ))
 
   //Creating a Case Class Flight
   case class Flight(
