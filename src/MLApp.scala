@@ -160,22 +160,16 @@ object MLApp {
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
-      .map(row => (row.getDouble(2), row.getDouble(0))).rdd //[(Double, Double)]
+      .map(row => (row.getDouble(2), row.getDouble(0))).rdd
 
-    /*case class predictionAndLabel(prediction: Double, label: Double)
-    val predictionAndLabels = predictionDF.select("prediction", "label").as[predictionAndLabel]
-       Instantiate metrics object*/
-
-    //    predictionAndLabels.foreach(println)
-
-    val metrics = new MulticlassMetrics(predictionAndLabels)
+    val multiclassMetrics = new MulticlassMetrics(predictionAndLabels)
 
     val metricsDF = getMetrics(predictionAndLabels).toDF("Name", "Score")
     metricsDF.show()
 
     // Confusion matrix
     println("Confusion matrix:")
-    println(metrics.confusionMatrix)
+    println(multiclassMetrics.confusionMatrix)
 
     // Compute raw scores on the test set
     /*    val scoreAndLabels: RDD[(Double, Double)] = predictionDF
@@ -188,7 +182,7 @@ object MLApp {
       .rdd
 
     // Instantiate metrics object
-    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 10)
+    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 100)
 
     // Precision by threshold
     val precision = binaryMetrics.precisionByThreshold
@@ -232,6 +226,7 @@ object MLApp {
     println("Area under ROC = " + auROC)
 
     /* Parameters tuning with CrossValidator and ParamGridBuilder */
+/*
     val paramGrid = new ParamGridBuilder()
       .addGrid(estimator.maxBins, Array(10000, 11000))
       .addGrid(estimator.maxDepth, Array(2, 5, 10))
@@ -248,6 +243,7 @@ object MLApp {
     val predictions = modelWithTuning.transform(testData)
     val accWithTuning = evaluator.evaluate(predictions)
     println(s"ACCURACY with parameters tuning: $accWithTuning%")
+*/
 
     spark.stop()
   }
