@@ -42,6 +42,8 @@ object MLApp {
       .appName("MLApp")
       .getOrCreate
 
+
+
     import spark.implicits._
     val dataFrame = spark
       .read
@@ -89,14 +91,6 @@ object MLApp {
       "Dest",*/
       "FlightNum",
       "TailNum")
-
-    val stringIndexers = categoricalCols.map(col =>
-      new StringIndexer()
-        .setInputCol(col)
-        .setOutputCol(col + "Ix")
-        .setHandleInvalid("keep")
-    )
-
     val featureCols = categoricalCols.map(_ + "Ix") ++
       Array(
         /*"DayOfWeek",
@@ -110,6 +104,35 @@ object MLApp {
         "ArrTime",
         "CRSArrTime"
       )
+    val numbericCols = Array(
+      /*"DayOfWeek",
+              "ActualElapsedTime",
+              "CRSElapsedTime",
+              "AirTime",
+              "ArrDelay",
+              "Distance",*/
+      "DepTime",
+      "CRSDepTime",
+      "ArrTime",
+      "CRSArrTime"
+    )
+
+    BasedonRandomForest.run(
+      Array("No", "Features Important"),
+      balanceDataset,
+      categoricalCols,
+      numbericCols,
+      spark
+    )
+    return 0
+    val stringIndexers = categoricalCols.map(col =>
+      new StringIndexer()
+        .setInputCol(col)
+        .setOutputCol(col + "Ix")
+        .setHandleInvalid("keep")
+    )
+
+
 
     val splits = balanceDataset.randomSplit(Array(0.7, 0.3), seed = 36L)
     val (trainingData, testData) = (splits(0).cache(), splits(1))

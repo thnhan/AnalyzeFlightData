@@ -51,7 +51,7 @@ object BasedonDecisionTree {
         .setOutputCol("Indexed" + col)
         .setHandleInvalid("keep")
     )
-
+    println("-------")
     /* Assemble features */
     val featureCols = stringCols.map("Indexed" + _) ++ numericCols
     val assembler = new VectorAssembler()
@@ -62,7 +62,7 @@ object BasedonDecisionTree {
     val estimator = new DecisionTreeClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
-      .setMaxBins(1000)
+//      .setMaxBins(10000)
 
     /* Initial a pipeline */
     val steps = stringIndexers ++ Array(assembler, estimator)
@@ -70,30 +70,21 @@ object BasedonDecisionTree {
 
     /* Initial a evaluator */
     val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("accuracy")
+      .setMetricName("areaUnderROC")
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
 
     /* Initial a Cross Validator */
+
     val validator = new CrossValidator()
       .setEstimator(pipeline)
       .setEvaluator(evaluator)
     /*.setNumFolds(agrs(1).toInt)*/
+    println("-------")
 
-    if (args(0) != "Parameters tuning") {
-      /* Training pipeline */
-      val modelWithoutTuning = pipeline.fit(trainingData)
-      val predictionDF = modelWithoutTuning
-        .transform(testData)
-        .select("label", "probability", "prediction")
-
-      /* Measure the accuracy */
-      predictionDF.show(truncate = false)
-      val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-      println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
-    }
-    else {
+    if (args(0) == "Parameters tuning") {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
+      println("Parameters tuning")
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxBins,  Array(10000, 11000))
         .addGrid(estimator.maxDepth, Array(2, 5, 10))
@@ -103,20 +94,33 @@ object BasedonDecisionTree {
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
     }
+    else {
+      val paramGrid = new ParamGridBuilder()
+        .addGrid(estimator.maxBins,  Array(10000))
+        .addGrid(estimator.impurity, Array("gini"))
+        .build()
+      /* Add paramGrid into Cross Validation */
+      validator.setEstimatorParamMaps(paramGrid)
+    }
 
     /* Training pipeline */
+    println("train")
     val model = validator.fit(trainingData)
     val predictionDF = model
       .transform(testData)
       .select("label", "probability", "prediction")
+      .cache()
+    predictionDF.show(truncate = false)
+    println("finish training")
 
     /* Measure the accuracy */
-    predictionDF.show(truncate = false)
     val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    if (args(0) != "Parameters tuning")
-      println(s"ACCURACY without parameters tuning: $accuracy%")
-    else
+    if (args(0) == "Parameters tuning") {
       println(s"ACCURACY with parameters tuning: $accuracy%")
+    }
+    else {
+      println(s"ACCURACY without parameters tuning: $accuracy%")
+    }
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
@@ -128,6 +132,7 @@ object BasedonDecisionTree {
 
     /* Random Forest features important */
     if (args(1) == "Features Important") {
+      println("Features Important")
       val featuresImportant = model
         .bestModel
         .asInstanceOf[PipelineModel]
@@ -150,7 +155,7 @@ object BasedonDecisionTree {
       .select("probability", "label")
       .map { case Row(prob: Vector, label: Double) => (prob(1), label) }
       .rdd
-
+    println("No Features Important")
     // Instantiate metrics object
     val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 2)
 

@@ -80,27 +80,23 @@ object BasedonRandomForest {
       .setEvaluator(evaluator)
     /*.setNumFolds(agrs(1).toInt)*/
 
-    if (args(0) != "Parameters tuning") {
-      /* Training pipeline */
-      val modelWithoutTuning = pipeline.fit(trainingData)
-      val predictionDF = modelWithoutTuning
-        .transform(testData)
-        .select("label", "probability", "prediction")
-
-      /* Measure the accuracy */
-      predictionDF.show(truncate = false)
-      val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-      println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
-    }
-    else {
+    if (args(0) == "Parameters tuning") {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
+      println("Parameters tuning")
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxBins,  Array(10000, 11000))
         .addGrid(estimator.maxDepth, Array(2, 5, 10))
-        .addGrid(estimator.numTrees, Array(100, 200, 300))
         .addGrid(estimator.impurity, Array("entropy", "gini"))
         .build()
 
+      /* Add paramGrid into Cross Validation */
+      validator.setEstimatorParamMaps(paramGrid)
+    }
+    else {
+      val paramGrid = new ParamGridBuilder()
+        .addGrid(estimator.maxBins,  Array(10000))
+        .addGrid(estimator.impurity, Array("gini"))
+        .build()
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
     }
