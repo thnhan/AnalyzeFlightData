@@ -1,3 +1,5 @@
+//import breeze.plot.{Figure, plot}
+//import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{ByteType, DoubleType, IntegerType, StringType, StructField, StructType}
 
 case object Global {
@@ -131,19 +133,35 @@ case object Global {
                     )
 
   /*
-  //  def parseFlight1(str: String): Flight1 = {
-  //    val line = str.split(",")
-  //    new Flight1(
-  //      line(0).toByte,
-  //      line(1).toByte,
-  //      line(2).toByte,
-  //      line(3).toByte,
-  //      line(4),
-  //      line(5),
-  //      line(6).toInt
-  //    )
-  //  }
-  //  Defining a Parse String function to parse input into Flight class
-  //  function to parse input into 'Flight' class
+    def parseFlight1(str: String): Flight1 = {
+      val line = str.split(",")
+      new Flight1(
+        line(0).toByte,
+        line(1).toByte,
+        line(2).toByte,
+        line(3).toByte,
+        line(4),
+        line(5),
+        line(6).toInt
+      )
+    }
+    Defining a Parse String function to parse input into Flight class
+    function to parse input into 'Flight' class
    */
+
+
+  /*def plottingROC(rocDF: DataFrame) = {
+    val fig = Figure()
+    val chart = fig.subplot(0)
+    chart.title = "ROC curve"
+    chart.xlim(2,100)
+    chart.ylim(0,100000)
+
+    val plotX = Array(1,2,3,4)//rocDF.collect().map(_.getDouble(0))
+    val plotY = Array(1,2,3,4)//rocDF.collect().map(_.getDouble(1))
+    chart += plot(plotX, plotY)
+    chart.xlabel = "FPR"
+    chart.ylabel = "TPR"
+    chart.refresh()
+  }*/
 }
