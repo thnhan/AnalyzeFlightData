@@ -1,5 +1,5 @@
-import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.NaiveBayes
+import org.apache.spark.ml.{Pipeline, PipelineModel}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 
-object BasedOnNaiveBayes {
+object BasedonGDBTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
@@ -28,12 +28,13 @@ object BasedOnNaiveBayes {
     )
   }
 
-  def run(agrs: Array[String],
+  def run(args: Array[String],
           dataset: DataFrame,
           stringCols: Array[String],
           numericCols: Array[String],
           spark: SparkSession
          ): Unit = {
+
     import spark.implicits._
 
     /* Splitting training, test data */
@@ -58,9 +59,10 @@ object BasedOnNaiveBayes {
       .setOutputCol("features")
 
     /* Init a estimator */
-    val estimator = new NaiveBayes()
+    val estimator = new GBTClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
+      .setMaxBins(1000)
 
     /* Initial a pipeline */
     val steps = stringIndexers ++ Array(assembler, estimator)
@@ -78,32 +80,6 @@ object BasedOnNaiveBayes {
       .setEvaluator(evaluator)
     /*.setNumFolds(agrs(1).toInt)*/
 
-
-    if (agrs(0) != "Parameters tuning") {
-      /* Training pipeline */
-      val modelWithoutTuning = pipeline.fit(trainingData)
-      val predictionDF = modelWithoutTuning
-        .transform(testData)
-        .select("label", "probability", "prediction")
-
-      /* Measure the accuracy */
-      predictionDF.show(truncate = false)
-      val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-      println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
-    }
-    else {
-      /* Parameters tuning with CrossValidator and ParamGridBuilder */
-      val paramGrid = new ParamGridBuilder()
-        /*.addGrid(estimator., Array(10000, 11000))
-          .addGrid(estimator.maxDepth, Array(2, 5, 10))
-          .addGrid(estimator.numTrees, Array(100, 200, 300))
-          .addGrid(estimator.impurity, Array("entropy", "gini"))*/
-        .build()
-
-      /* Add paramGrid into Cross Validation */
-      validator.setEstimatorParamMaps(paramGrid)
-    }
-
     /* Training pipeline */
     val model = validator.fit(trainingData)
     val predictionDF = model
@@ -113,7 +89,7 @@ object BasedOnNaiveBayes {
     /* Measure the accuracy */
     predictionDF.show(truncate = false)
     val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    if (agrs(0) != "Parameters tuning")
+    if (args(0) != "Parameters tuning")
       println(s"ACCURACY without parameters tuning: $accuracy%")
     else
       println(s"ACCURACY with parameters tuning: $accuracy%")
@@ -156,7 +132,7 @@ object BasedOnNaiveBayes {
       println(s"Threshold: $t, F-score: $f, Beta = 1")
     }
 
-/*    val beta = 0.5
+    /*val beta = 0.5
     val fScore = binaryMetrics.fMeasureByThreshold(beta)
     f1Score.foreach { case (t, f) =>
       println(s"Threshold: $t, F-score: $f, Beta = 0.5")
@@ -169,8 +145,8 @@ object BasedOnNaiveBayes {
     val auROC = binaryMetrics.areaUnderROC
     println("Area under ROC = " + auROC)
 
-//    // Compute thresholds used in ROC and PR curves
-//    val thresholds = precision.map(_._1)
+    /*// Compute thresholds used in ROC and PR curves
+    val thresholds = precision.map(_._1)*/
 
     // ROC Curve
     val roc = binaryMetrics.roc

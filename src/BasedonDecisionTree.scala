@@ -1,5 +1,5 @@
 import org.apache.spark.ml.{Pipeline, PipelineModel}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 
-object BasedOnRF {
+object BasedonDecisionTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
@@ -28,7 +28,7 @@ object BasedOnRF {
     )
   }
 
-  def run(agrs: Array[String],
+  def run(args: Array[String],
           dataset: DataFrame,
           stringCols: Array[String],
           numericCols: Array[String],
@@ -59,7 +59,7 @@ object BasedOnRF {
       .setOutputCol("features")
 
     /* Init a estimator */
-    val estimator = new RandomForestClassifier()
+    val estimator = new DecisionTreeClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
       .setMaxBins(1000)
@@ -80,7 +80,7 @@ object BasedOnRF {
       .setEvaluator(evaluator)
     /*.setNumFolds(agrs(1).toInt)*/
 
-    if (agrs(0) != "Parameters tuning") {
+    if (args(0) != "Parameters tuning") {
       /* Training pipeline */
       val modelWithoutTuning = pipeline.fit(trainingData)
       val predictionDF = modelWithoutTuning
@@ -95,9 +95,8 @@ object BasedOnRF {
     else {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
       val paramGrid = new ParamGridBuilder()
-        .addGrid(estimator.maxBins, Array(10000, 11000))
+        .addGrid(estimator.maxBins,  Array(10000, 11000))
         .addGrid(estimator.maxDepth, Array(2, 5, 10))
-        .addGrid(estimator.numTrees, Array(100, 200, 300))
         .addGrid(estimator.impurity, Array("entropy", "gini"))
         .build()
 
@@ -114,7 +113,7 @@ object BasedOnRF {
     /* Measure the accuracy */
     predictionDF.show(truncate = false)
     val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    if (agrs(0) != "Parameters tuning")
+    if (args(0) != "Parameters tuning")
       println(s"ACCURACY without parameters tuning: $accuracy%")
     else
       println(s"ACCURACY with parameters tuning: $accuracy%")
@@ -128,7 +127,7 @@ object BasedOnRF {
     metricsDF.show()
 
     /* Random Forest features important */
-    if (agrs(1) == "Features Important") {
+    if (args(1) == "Features Important") {
       val featuresImportant = model
         .bestModel
         .asInstanceOf[PipelineModel]
@@ -173,11 +172,11 @@ object BasedOnRF {
       println(s"Threshold: $t, F-score: $f, Beta = 1")
     }
 
-  /*val beta = 0.5
-  val fScore = binaryMetrics.fMeasureByThreshold(beta)
-  f1Score.foreach { case (t, f) =>
-    println(s"Threshold: $t, F-score: $f, Beta = 0.5")
-  }*/
+    /*val beta = 0.5
+    val fScore = binaryMetrics.fMeasureByThreshold(beta)
+    f1Score.foreach { case (t, f) =>
+      println(s"Threshold: $t, F-score: $f, Beta = 0.5")
+    }*/
 
     // AUPRC
     val auPRC = binaryMetrics.areaUnderPR

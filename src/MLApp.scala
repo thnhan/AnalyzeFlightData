@@ -1,5 +1,5 @@
 import org.apache.spark.ml.{Pipeline, PipelineModel, classification}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, LinearSVC, LinearSVCModel, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, LinearSVC, LinearSVCModel, MultilayerPerceptronClassifier, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{Bucketizer, LabeledPoint, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
@@ -124,11 +124,9 @@ object MLApp {
     val estimator = new LinearSVC()
       .setLabelCol("label")
       .setFeaturesCol("features")
-      .setMaxIter(500)
-      .setRegParam(0.01)
+      .setMaxIter(200)
+      .setRegParam(0.001)
       /*.setMaxBins(10000)*/
-
-
 
     val steps1 = stringIndexers ++ Array(assembler) //, estimator)
     val pipeline1 = new Pipeline().setStages(steps1)
