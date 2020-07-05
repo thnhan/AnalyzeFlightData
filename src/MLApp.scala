@@ -1,5 +1,5 @@
-import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.{NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.{Pipeline, classification}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{Bucketizer, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
@@ -8,6 +8,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
+import org.apache.spark.mllib.classification.SVMModel
+import org.apache.spark.mllib.tree.DecisionTree
 
 
 object MLApp {
@@ -107,7 +109,6 @@ object MLApp {
         "CRSDepTime",
         "ArrTime",
         "CRSArrTime"
-
       )
 
     val splits = balanceDataset.randomSplit(Array(0.7, 0.3), seed = 36L)
@@ -120,7 +121,7 @@ object MLApp {
       .setInputCols(featureCols)
       .setOutputCol("features")
 
-    val estimator = new RandomForestClassifier()
+    val estimator = new GBTClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
       .setMaxBins(10000)
@@ -145,18 +146,18 @@ object MLApp {
 
 
     /* Random Forest features important */
-    val featureImportances = modelWithoutTuning
+    /*val featureImportances = modelWithoutTuning
       //      .bestModel
       //      .asInstanceOf[PipelineModel]
       .stages(stringIndexers.length + 1) // (stringIndexers.size + 1)'th transformer of PipelineModel is "rf" (RandomForest)
-      .asInstanceOf[RandomForestClassificationModel]
+      .asInstanceOf[DecisionTreeClassificationModel]
       .featureImportances
 
     assembler.getInputCols.zip(featureImportances.toArray)
       .sortBy(-_._2)
       .toSeq
       .toDF("name", "important")
-      .show()
+      .show()*/
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
