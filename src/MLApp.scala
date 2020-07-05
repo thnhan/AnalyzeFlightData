@@ -1,19 +1,19 @@
-import org.apache.spark.ml.{Pipeline, classification}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.{Pipeline, PipelineModel, classification}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, LinearSVC, LinearSVCModel, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{Bucketizer, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.feature.{Bucketizer, LabeledPoint, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, MulticlassMetrics}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
-import org.apache.spark.mllib.classification.SVMModel
+import org.apache.spark.mllib.classification.{SVMModel, SVMWithSGD}
 import org.apache.spark.mllib.tree.DecisionTree
+import org.apache.spark.mllib.util.MLUtils
 
 
 object MLApp {
-
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
@@ -112,7 +112,7 @@ object MLApp {
       )
 
     val splits = balanceDataset.randomSplit(Array(0.7, 0.3), seed = 36L)
-    val (trainingData, testData) = (splits(0), splits(1))
+    val (trainingData, testData) = (splits(0).cache(), splits(1))
     trainingData.groupBy("label").count.show()
     testData.groupBy("label").count.show()
     trainingData.printSchema()
@@ -121,19 +121,70 @@ object MLApp {
       .setInputCols(featureCols)
       .setOutputCol("features")
 
-    val estimator = new GBTClassifier()
+    val estimator = new LinearSVC()
       .setLabelCol("label")
       .setFeaturesCol("features")
-      .setMaxBins(10000)
+      .setMaxIter(500)
+      .setRegParam(0.01)
+      /*.setMaxBins(10000)*/
+
+
+
+    val steps1 = stringIndexers ++ Array(assembler) //, estimator)
+    val pipeline1 = new Pipeline().setStages(steps1)
+//      .asInstanceOf[PipelineModel]
+    val testDataAndFea = pipeline1
+      .fit(testData)
+      .transform(testData)
+    val trainingDataAndFea = pipeline1
+      .fit(trainingData)
+      .transform(trainingData)
+
+    val svcModel = estimator.fit(trainingDataAndFea)
+    val predLabels = testDataAndFea.select("label", "features").map { case Row(label: Double, v: Vector) =>
+      val pred = svcModel.predict(v)
+      (label, pred)
+    }.toDF("label", "prediction")
+    predLabels.show()
+
+
+    /*/*val data = MLUtils.loadLibSVMFile(sparkContext(),
+      "/home/vagrant/spark/data/mllib/sample_libsvm_data.txt")*/
+    val labeledPoints = testDataAndFea.select("label", "features")
+      .map {  case Row(label: Double, v: Vector) =>  LabeledPoint(label, v)
+      }.rdd
+    labeledPoints.take(10).foreach(println)
+    val svmModel = SVMWithSGD.train(MLUtils.tlabeledPoints, 10)
+//    svmWithSGD
+*/
+    val evaluator1 = new BinaryClassificationEvaluator()
+      .setMetricName("areaUnderROC")
+      .setLabelCol("label")
+      .setRawPredictionCol("prediction")
+
+    /* Measure the accuracy */
+    val accWithoutTuning1 = (evaluator1.evaluate(predLabels) * 100).formatted("%.2f")
+    println(s"ACCURACY without parameters tuning: $accWithoutTuning1%")
+    return  0
+
+//    return  0
+//    val predictionDF = estimator
+//      .transform(testData)
+//      .select($"label", $"probability", $"prediction")
+//    predictionDF.show(truncate = false)
+
+    return 0
 
     /* Training pipeline */
     val steps = stringIndexers ++ Array(assembler, estimator)
     val pipeline = new Pipeline().setStages(steps)
     val modelWithoutTuning = pipeline.fit(trainingData)
+
     val predictionDF = modelWithoutTuning
-      .transform(testData.na.drop())
+      .transform(testData)
       .select($"label", $"probability", $"prediction")
     predictionDF.show(truncate = false)
+    return 0
 
     val evaluator = new BinaryClassificationEvaluator()
       .setMetricName("areaUnderROC")
@@ -143,7 +194,7 @@ object MLApp {
     /* Measure the accuracy */
     val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
     println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
-
+    return  0
 
     /* Random Forest features important */
     /*val featureImportances = modelWithoutTuning

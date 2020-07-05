@@ -5,9 +5,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream
 import org.apache.spark.graphx.{Edge, Graph, VertexId}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-
-
-
 import scala.util.Try
 
 class UI extends MainFrame {
