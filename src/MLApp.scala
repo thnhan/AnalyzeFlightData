@@ -1,11 +1,5 @@
-import org.apache.spark.ml.{Pipeline, PipelineModel, classification}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, LinearSVC, LinearSVCModel, MultilayerPerceptronClassifier, NaiveBayes, RandomForestClassificationModel, RandomForestClassifier}
-import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{Bucketizer, LabeledPoint, StringIndexer, VectorAssembler}
-import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, MulticlassMetrics}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.ml.feature.Bucketizer
+import org.apache.spark.sql.SparkSession
 import org.apache.log4j.{Level, Logger}
 
 object MLApp {
@@ -33,12 +27,11 @@ object MLApp {
 
     /* Dataset */
     println(s"Flight Data:")
-    dataFrame.show()
+    dataset.show(truncate = false)
     println(s"Number of rows = ${dataFrame.count()}")
     println(s"Schema:")
     dataset.printSchema()
-    dataset.show(truncate = false)
-    //    dataset.createOrReplaceTempView("dataset")
+//    dataset.createOrReplaceTempView("dataset")
 
     /* Creating Dataset */
     val bucketed = new Bucketizer()
@@ -81,9 +74,19 @@ object MLApp {
       "CRSArrTime"
     )
 
+    /* Run Random Forest */
+    BasedonRandomForest.run(
+      Array("", "Parameters tuning"),
+      balanceDataset,
+      stringCols,
+      numbericCols,
+      spark
+    )
+
+    return 0
     /* Run Linear SVC */
     BasedonSVC.run(
-      Array(""),
+      Array("", "Parameters tuning"),
       balanceDataset,
       stringCols,
       numbericCols,

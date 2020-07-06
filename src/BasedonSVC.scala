@@ -7,10 +7,10 @@ import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 object BasedonSVC {
-  def run(args: Array[String],
-          dataset: DataFrame,
-          stringCols: Array[String],
-          numericCols: Array[String],
+  def run(args        : Array[String],
+          dataset     : DataFrame,
+          stringCols  : Array[String],
+          numericCols : Array[String],
           spark: SparkSession
          ): Unit = {
     import spark.implicits._
@@ -66,7 +66,7 @@ object BasedonSVC {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxIter, Array(100, 200, 300))
-        .addGrid(estimator.regParam, Array(0.01, 0.001, 0.0001))
+        .addGrid(estimator.regParam, Array(0.1, 0.01, 0.001))
         .build()
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
