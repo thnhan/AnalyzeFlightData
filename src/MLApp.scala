@@ -43,7 +43,6 @@ object MLApp {
       .getOrCreate
 
 
-
     import spark.implicits._
     val dataFrame = spark
       .read
@@ -51,7 +50,7 @@ object MLApp {
       .option("header", value = true)
       .schema(Global.schema)
       .load("C:/Users/THNHAN/IdeaProjects/Dataset/Flight data for delay analysis/Delayed_Flights.csv")
-    .as[Global.FlightDelay]
+      .as[Global.FlightDelay]
 
     /*    println(dataFrame.count())
 
@@ -85,13 +84,13 @@ object MLApp {
     val balanceDataset = datasetWithLabel
       .stat.sampleBy(col = "label", frac, seed = 36L)
 
-    val categoricalCols = Array(
+    val stringCols = Array(
       /*"UniqueCarrier",
       "Origin",
       "Dest",*/
       "FlightNum",
       "TailNum")
-    val featureCols = categoricalCols.map(_ + "Ix") ++
+   /* val featureCols = stringCols.map(_ + "Ix") ++
       Array(
         /*"DayOfWeek",
                 "ActualElapsedTime",
@@ -103,7 +102,7 @@ object MLApp {
         "CRSDepTime",
         "ArrTime",
         "CRSArrTime"
-      )
+      )*/
     val numbericCols = Array(
       /*"DayOfWeek",
               "ActualElapsedTime",
@@ -117,21 +116,37 @@ object MLApp {
       "CRSArrTime"
     )
 
-    BasedonRandomForest.run(
-      Array("No", "Features Important"),
+    BasedonSVC.run(
+      Array(""),
       balanceDataset,
-      categoricalCols,
+      stringCols,
       numbericCols,
       spark
     )
+
+    BasedonGDBTree.run(
+      Array(""),
+      balanceDataset,
+      stringCols,
+      numbericCols,
+      spark
+    )
+
+    BasedonDecisionTree.run(
+      Array("", "Features Important"),
+      balanceDataset,
+      stringCols,
+      numbericCols,
+      spark
+    )
+
     return 0
-    val stringIndexers = categoricalCols.map(col =>
+    val stringIndexers = stringCols.map(col =>
       new StringIndexer()
         .setInputCol(col)
         .setOutputCol(col + "Ix")
         .setHandleInvalid("keep")
     )
-
 
 
     val splits = balanceDataset.randomSplit(Array(0.7, 0.3), seed = 36L)
@@ -141,7 +156,7 @@ object MLApp {
     trainingData.printSchema()
 
     val assembler = new VectorAssembler()
-      .setInputCols(featureCols)
+      .setInputCols(stringCols)
       .setOutputCol("features")
 
     val estimator = new LinearSVC()
@@ -149,11 +164,11 @@ object MLApp {
       .setFeaturesCol("features")
       .setMaxIter(200)
       .setRegParam(0.001)
-      /*.setMaxBins(10000)*/
+    /*.setMaxBins(10000)*/
 
     val steps1 = stringIndexers ++ Array(assembler) //, estimator)
     val pipeline1 = new Pipeline().setStages(steps1)
-//      .asInstanceOf[PipelineModel]
+    //      .asInstanceOf[PipelineModel]
     val testDataAndFea = pipeline1
       .fit(testData)
       .transform(testData)
@@ -186,13 +201,13 @@ object MLApp {
     /* Measure the accuracy */
     val accWithoutTuning1 = (evaluator1.evaluate(predLabels) * 100).formatted("%.2f")
     println(s"ACCURACY without parameters tuning: $accWithoutTuning1%")
-    return  0
+    return 0
 
-//    return  0
-//    val predictionDF = estimator
-//      .transform(testData)
-//      .select($"label", $"probability", $"prediction")
-//    predictionDF.show(truncate = false)
+    //    return  0
+    //    val predictionDF = estimator
+    //      .transform(testData)
+    //      .select($"label", $"probability", $"prediction")
+    //    predictionDF.show(truncate = false)
 
     return 0
 
@@ -215,7 +230,7 @@ object MLApp {
     /* Measure the accuracy */
     val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
     println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
-    return  0
+    return 0
 
     /* Random Forest features important */
     /*val featureImportances = modelWithoutTuning
@@ -299,7 +314,7 @@ object MLApp {
     println("Area under ROC = " + auROC)
 
     /* Parameters tuning with CrossValidator and ParamGridBuilder */
-/*
+    /*
     val paramGrid = new ParamGridBuilder()
       .addGrid(estimator.maxBins, Array(10000, 11000))
       .addGrid(estimator.maxDepth, Array(2, 5, 10))

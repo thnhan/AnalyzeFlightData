@@ -17,7 +17,7 @@ object BasedonSVC {
 
     /* Splitting training, test data */
     val splits = dataset.randomSplit(Array(0.7, 0.3), seed = 36L)
-    val (trainingData, testData) = (splits(0), splits(1))
+    val (trainingData, testData) = (splits(0).cache(), splits(1).cache())
     trainingData.groupBy("label").count.show()
     testData.groupBy("label").count.show()
     trainingData.printSchema()
@@ -31,7 +31,7 @@ object BasedonSVC {
     )
 
     /* Assemble features */
-    val featureCols = stringCols.map("Indexed" + _) ++ numericCols
+    val featureCols = stringCols.map(col => "Indexed" + col) ++ numericCols
     val assembler = new VectorAssembler()
       .setInputCols(featureCols)
       .setOutputCol("features")
@@ -40,17 +40,13 @@ object BasedonSVC {
     val steps = stringIndexers ++ Array(assembler)
     val pipeline = new Pipeline().setStages(steps)
 
-    val trainingDataAndFea = pipeline.fit(trainingData).transform(trainingData)
-    val testDataAndFea = pipeline.fit(testData).transform(testData)
-
     val estimator = new LinearSVC()
       .setLabelCol("label")
       .setFeaturesCol("features")
       .setMaxIter(200)
-      .setRegParam(0.0001)
+      .setRegParam(0.001)
 
     val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("areaUnderROC")
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
 
@@ -61,16 +57,10 @@ object BasedonSVC {
     /*.setNumFolds(agrs(1).toInt)*/
 
     if (args(0) != "Parameters tuning") {
-      /* Training pipeline */
-      val modelWithoutTuning = pipeline.fit(trainingData)
-      val predictionDF = modelWithoutTuning
-        .transform(testData)
-        .select("label", "probability", "prediction")
-
-      /* Measure the accuracy */
-      predictionDF.show(truncate = false)
-      val accWithoutTuning = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-      println(s"ACCURACY without parameters tuning: $accWithoutTuning%")
+      val paramGrid = new ParamGridBuilder()
+        .build()
+      /* Add paramGrid into Cross Validation */
+      validator.setEstimatorParamMaps(paramGrid)
     }
     else {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
@@ -78,18 +68,20 @@ object BasedonSVC {
         .addGrid(estimator.maxIter, Array(100, 200, 300))
         .addGrid(estimator.regParam, Array(0.01, 0.001, 0.0001))
         .build()
-
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
     }
 
-    val svcModel = validator.fit(trainingDataAndFea)
+    val trainingDataAndFea = pipeline.fit(trainingData).transform(trainingData)
+    val testDataAndFea = pipeline.fit(testData).transform(testData)
+
+    val svcModel = estimator.fit(trainingDataAndFea)
     val predLabels = testDataAndFea
       .select("label", "features")
       .map { case Row(label: Double, v: Vector) =>
         val prediction = svcModel
-          .bestModel
-          .asInstanceOf[LinearSVCModel]
+//          .bestModel
+//          .asInstanceOf[LinearSVCModel]
           .predict(v)
         (label, prediction)
       }.toDF("label", "prediction")
@@ -97,6 +89,9 @@ object BasedonSVC {
 
     /* Measure the accuracy */
     val accuracy = (evaluator.evaluate(predLabels) * 100).formatted("%.2f")
-    println(s"ACCURACY without parameters tuning: $accuracy%")
+    if (args(0) != "Parameters tuning")
+      println(s"ACCURACY without parameters tuning: $accuracy%")
+    else
+      println(s"ACCURACY with parameters tuning: $accuracy%")
   }
 }

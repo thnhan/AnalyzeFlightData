@@ -1,12 +1,11 @@
-import org.apache.spark.ml.{Pipeline, PipelineModel}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, DecisionTreeClassifier, GBTClassifier, RandomForestClassifier}
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.classification.GBTClassifier
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, MulticlassMetrics}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 
 object BasedonGDBTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
@@ -62,7 +61,7 @@ object BasedonGDBTree {
     val estimator = new GBTClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
-      .setMaxBins(1000)
+      .setMaxBins(10000)
 
     /* Initial a pipeline */
     val steps = stringIndexers ++ Array(assembler, estimator)
@@ -70,18 +69,17 @@ object BasedonGDBTree {
 
     /* Initial a evaluator */
     val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("accuracy")
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
 
     /* Initial a Cross Validator */
-    val validator = new CrossValidator()
+    /*val validator = new CrossValidator()
       .setEstimator(pipeline)
-      .setEvaluator(evaluator)
+      .setEvaluator(evaluator)*/
     /*.setNumFolds(agrs(1).toInt)*/
 
     /* Training pipeline */
-    val model = validator.fit(trainingData)
+    val model = pipeline.fit(trainingData)
     val predictionDF = model
       .transform(testData)
       .select("label", "probability", "prediction")
@@ -153,6 +151,6 @@ object BasedonGDBTree {
     // Precision-Recall Curve
     val PRC = binaryMetrics.pr
 
-    return roc
+    roc
   }
 }

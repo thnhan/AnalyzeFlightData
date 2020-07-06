@@ -70,7 +70,6 @@ object BasedonDecisionTree {
 
     /* Initial a evaluator */
     val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("areaUnderROC")
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
 

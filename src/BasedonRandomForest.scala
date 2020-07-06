@@ -1,5 +1,5 @@
 import org.apache.spark.ml.{Pipeline, PipelineModel}
-import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.classification.{DecisionTreeClassificationModel, RandomForestClassificationModel, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
@@ -70,7 +70,6 @@ object BasedonRandomForest {
 
     /* Initial a evaluator */
     val evaluator = new BinaryClassificationEvaluator()
-      .setMetricName("accuracy")
       .setLabelCol("label")
       .setRawPredictionCol("prediction")
 
@@ -129,7 +128,7 @@ object BasedonRandomForest {
         .bestModel
         .asInstanceOf[PipelineModel]
         .stages(stringIndexers.length + 1) // (stringIndexers.size + 1)'th transformer of PipelineModel is "rf" (RandomForest)
-        .asInstanceOf[DecisionTreeClassificationModel]
+        .asInstanceOf[RandomForestClassificationModel]
         .featureImportances
 
       assembler.getInputCols.zip(featuresImportant.toArray)
