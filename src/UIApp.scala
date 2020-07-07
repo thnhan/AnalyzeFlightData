@@ -15,26 +15,36 @@ class UI extends MainFrame {
   def restrictHeight(s: Component) {
     s.maximumSize = new Dimension(Short.MaxValue, s.preferredSize.height)
   }
+
   title = "Analyze Flight Data"
-  val nameField: TextField = new TextField { columns = 80 }
-//  val likeScala = new CheckBox("I like Scala")
-//  likeScala.selected = true
-//  val status1 = new RadioButton("Undergraduate students")
-//  val status2 = new RadioButton("Postgraduate student")
-//  val status3 = new RadioButton("Professor")
-//  status3.selected = true
-//  val statusGroup = new ButtonGroup(status1, status2, status3)
+  val nameField: TextField = new TextField {
+    columns = 80
+  }
+
+  val paraTuning = new CheckBox("Parameters Tuning")
+  paraTuning.selected = false
+  val status1 = new RadioButton("Naive Bayes")
+  val status2 = new RadioButton("Decision Tree")
+  val status3 = new RadioButton("Linear SVC")
+  val status4 = new RadioButton("Random Forest")
+  val status5 = new RadioButton("Gradient-Boosted Tree")
+  status3.selected = true
+  val statusGroup = new ButtonGroup(status1, status2, status3, status4, status5)
+//  val gender = new ComboBox(List("don't know", "female", "male"))
   val query = new ComboBox(Global.list)
+
+  /* Initial Comment Field */
   val commentField: TextArea = new TextArea {
-    rows = 50; columns = 80
+    rows = 40
+    columns = 80
     lineWrap = false
     wordWrap = false
   }
 
-//  val pressMe = new ToggleButton("Press me!")
-//  pressMe.selected = true
-//  restrictHeight(nameField)
-//  restrictHeight(query)
+  //  val pressMe = new ToggleButton("Press me!")
+  //  pressMe.selected = true
+  //  restrictHeight(nameField)
+  //  restrictHeight(query)
 
   contents = new BoxPanel(Orientation.Vertical) {
     contents += new BoxPanel(Orientation.Horizontal) {
@@ -44,23 +54,29 @@ class UI extends MainFrame {
       nameField.enabled = false
       nameField.text = "file name flights.csv"
     }
-//    contents += Swing.VStrut(5)
-//    contents += likeScala
-//    contents += Swing.VStrut(5)
-//    contents += new BoxPanel(Orientation.Horizontal) {
-//      contents += status1
-//      contents += Swing.HStrut(10)
-//      contents += status2
-//      contents += Swing.HStrut(10)
-//      contents += status3
-//    }
+
+    contents += Swing.VStrut(5)
+    contents += new BoxPanel(Orientation.Horizontal) {
+      contents += status1
+      contents += Swing.HStrut(10)
+      contents += status2
+      contents += Swing.HStrut(10)
+      contents += status3
+      contents += Swing.HStrut(10)
+      contents += status4
+      contents += Swing.HStrut(10)
+      contents += status5
+    }
+    contents += Swing.VStrut(5)
+    contents += paraTuning
+
     contents += Swing.VStrut(5)
     contents += new BoxPanel(Orientation.Horizontal) {
       contents += new Label("Query")
       contents += Swing.HStrut(20)
       contents += query
-
     }
+
     contents += Swing.VStrut(5)
     contents += new Label("Result")
     contents += Swing.VStrut(3)
@@ -68,9 +84,18 @@ class UI extends MainFrame {
     contents += Swing.VStrut(5)
     contents += new BoxPanel(Orientation.Horizontal) {
       contents += Swing.HGlue
-      contents += Button("Process Query") { pressMeTwo() }
       contents += Swing.VStrut(5)
-      contents += Button("Close") { reportAndClose() }
+      contents += Button("Train & Evaluate model") {
+        trainAndEvaluate()
+      }
+      contents += Swing.HGlue
+      contents += Button("Process the query") {
+        pressMeTwo()
+      }
+      contents += Swing.VStrut(5)
+      contents += Button("Close") {
+        reportAndClose()
+      }
     }
 
     for (e <- contents)
@@ -86,6 +111,49 @@ class UI extends MainFrame {
   def reportAndClose() {
     println("Goodbye TRAN HOAI NHAN")
     sys.exit(0)
+  }
+
+  def trainAndEvaluate() {
+    if (status1.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Naive Bayes|Running"
+      println("Naive Bayes")
+
+      MLApp.main(Array("Naive Bayes"))
+    }
+    if (status2.selected) {
+      println("Decision Tree")
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Decision Tree|Running"
+      if (paraTuning.selected)
+        MLApp.main(Array("Decision Tree", "Parameters tuning"))
+      else
+        MLApp.main(Array("Decision Tree", ""))
+    }
+    if (status3.selected) {
+      println("Linear SVC")
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Linear SVC|Running"
+      if (paraTuning.selected)
+        MLApp.main(Array("Linear SVC", "Parameters tuning"))
+      else
+        MLApp.main(Array("Linear SVC", ""))
+    }
+    if (status4.selected) {
+      println("Random Forest")
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Random Forest|Running"
+      if (paraTuning.selected)
+        MLApp.main(Array("Random Forest", "Parameters tuning"))
+      else
+        MLApp.main(Array("Random Forest", ""))
+    }
+    if (status5.selected) {
+      println("Gradient-Boosted Tree")
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Gradient-Boosted Tree|Running"
+      MLApp.main(Array("Gradient-Boosted Tree", ""))
+    }
   }
 
   def pressMeTwo() {
@@ -182,7 +250,7 @@ class UI extends MainFrame {
         lines += "|    No|  AIRPORT CODE|Number of incoming flights|\n"
         lines += "+------+--------------+--------------------------+\n"
         var index = 0
-        for (x <- newIn.filter(x => x._1 != "nowhere").take(num))  {
+        for (x <- newIn.filter(x => x._1 != "nowhere").take(num)) {
           index += 1
           var len = 0
 
@@ -224,7 +292,7 @@ class UI extends MainFrame {
         lines += "|    No|  AIRPORT CODE|Number of outgoing flights|\n"
         lines += "+------+--------------+--------------------------+\n"
         var index = 0
-        for (x <- maxOut.filter(x => x._1 != "nowhere").take(num))  {
+        for (x <- maxOut.filter(x => x._1 != "nowhere").take(num)) {
           index += 1
           var len = 0
 
@@ -260,10 +328,9 @@ class UI extends MainFrame {
           case None =>
         }
 
-        /*
-        Use PageRank algorithm to score airports
-         */
-        val ranks = graph.pageRank(0.1).vertices //.filter(v => airportsMap(v._1) != "nowhere")
+        /* Use PageRank algorithm to score airports */
+        val ranks = graph.pageRank(0.1).vertices
+        //.filter(v => airportsMap(v._1) != "nowhere")
         val temp = ranks.join(graph.vertices)
         val temp2 = temp.sortBy(_._2, ascending = false)
         val impotant = temp2.collect
@@ -314,7 +381,7 @@ class UI extends MainFrame {
         var index = 0
         for (x <- result.vertices.filter(
           v => v._2._1 < Double.PositiveInfinity && v._2._2.length > 2
-        ).take(10))  {
+        ).take(10)) {
           index += 1
           var len = 0
 
@@ -346,7 +413,7 @@ class UI extends MainFrame {
         commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
         commentField.text = lines
 
-      case "Find the airport with the lowest flight costs"  =>
+      case "Find the airport with the lowest flight costs" =>
         /* Get input and prepare */
         val r = Dialog.showInput(contents.head, "Input the airport code (LAX)", initial = "LAX")
         var sourceAirport = "LAX"
@@ -436,7 +503,7 @@ class UI extends MainFrame {
         lines += "+------+--------------+--------------+\n\n"
 
         val edges = graph.triplets
-          .filter(e => e.srcAttr != "nowhere" &&  e.dstAttr != "nowhere")
+          .filter(e => e.srcAttr != "nowhere" && e.dstAttr != "nowhere")
           .collect
         lines += "List all edges of the graph:\n"
         lines += "+------+----------------+----------------+------------+\n"
@@ -513,15 +580,13 @@ class UI extends MainFrame {
     }
   }
 
-  def createGraph() : Graph[String, Int] = {
+  def createGraph(): Graph[String, Int] = {
     /* Initial */
     val conf = new SparkConf().setAppName("GuiApp").setMaster("local[2]")
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
 
-    /*
-    Load data as a DataFrame
-     */
+    /* Load data as a DataFrame */
     val spark = SparkSession.builder().getOrCreate()
     val data_df = spark
       .read
@@ -529,20 +594,16 @@ class UI extends MainFrame {
       .option("header", value = true)
       .load(path_file_data)
 
-    /*
-    Print data in commentField
-     */
+    /* Print data in commentField */
     val outCapture = new ByteArrayOutputStream
     Console.withOut(outCapture) {
       data_df.show()
     }
     val table_plt = new String(outCapture.toByteArray)
     commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-    commentField.text = table_plt + "Number of rows: " + data_df.count.toString
+    commentField.text = table_plt + "Total number of items: " + data_df.count.toString
 
-    /*
-    Convert DataFrame to RDD[String]
-    */
+    /* Convert DataFrame to RDD[String] */
     val RDD_String = data_df.rdd.map(x => {
       x.mkString(",").replace("[", "").replace("]", "")
     })
@@ -573,7 +634,7 @@ class UI extends MainFrame {
   }
 
   def changeText() {
-    val r = Dialog.showInput(contents.head, "New label text", initial=num_defaut_label.text)
+    val r = Dialog.showInput(contents.head, "New label text", initial = num_defaut_label.text)
     r match {
       case Some(s) => num_defaut_label.text = s
       case None =>
@@ -598,11 +659,11 @@ class UI extends MainFrame {
     }
     val table_plt = new String(outCapture.toByteArray)
     commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-    commentField.text = table_plt + "Number of rows: " + data_df.count.toString
+    commentField.text = table_plt + "Total number of items: " + data_df.count.toString
   }
 }
 
-object App {
+object UIApp {
   def main(args: Array[String]): Unit = {
     val ui = new UI
     ui.visible = true

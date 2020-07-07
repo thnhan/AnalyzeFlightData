@@ -30,7 +30,7 @@ object MLApp {
     println(s"Number of rows = ${dataFrame.count()}")
     println(s"Schema:")
     dataset.printSchema()
-//    dataset.createOrReplaceTempView("dataset")
+    //    dataset.createOrReplaceTempView("dataset")
 
     /* Creating Dataset */
     val bucketed = new Bucketizer()
@@ -54,60 +54,72 @@ object MLApp {
 
     /* */
     val stringCols = Array(
-//      "UniqueCarrier",
-//      "Origin",
-//      "Dest",
+      //      "UniqueCarrier",
+      //      "Origin",
+      //      "Dest",
       "FlightNum",
       "TailNum")
 
     val numbericCols = Array(
-//      "DayOfWeek",
-//      "ActualElapsedTime",
-//      "CRSElapsedTime",
-//      "AirTime",
-//      "ArrDelay",
-//      "Distance",
+      //      "DayOfWeek",
+      //      "ActualElapsedTime",
+      //      "CRSElapsedTime",
+      //      "AirTime",
+      //      "ArrDelay",
+      //      "Distance",
       "DepTime",
       "CRSDepTime",
       "ArrTime",
       "CRSArrTime"
     )
 
-    /*/* Run Random Forest */
-    BasedonRandomForest.run(
-      Array("", "Features Importance"),
-      balanceDataset,
-      stringCols,
-      numbericCols,
-      spark
-    )
+    args(0) match {
+      case "Naive Bayes" =>
+        BasedonNaiveBayes.run(
+          Array(""),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
 
-    /* Run Linear SVC */
-    BasedonLinearSVC.run(
-      Array("", "Parameters tuning"),
-      balanceDataset,
-      stringCols,
-      numbericCols,
-      spark
-    )
-*/
-    /* Run Gradient-Boost Tree */
-    BasedonGradientBoostedTree.run(
-      Array(""),
-      balanceDataset,
-      stringCols,
-      numbericCols,
-      spark
-    )
-/*
-    /* Run DecisionTree */
-    BasedonDecisionTree.run(
-      Array("", "Features Important"),
-      balanceDataset,
-      stringCols,
-      numbericCols,
-      spark
-    )*/
+      case "Decision Tree" =>
+        BasedonDecisionTree.run(
+          Array(args(1), "Features Important"),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+
+      case "Linear SVC" =>
+        BasedonLinearSVC.run(
+          Array(args(1)), // args(1): Parameters Tuning or Not
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+
+      case "Random Forest" =>
+        BasedonRandomForest.run(
+          Array(args(1), "Features Importance"),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+
+      case "Gradient-Boosted Tree" =>
+        /* Run Gradient-Boost Tree */
+        BasedonGradientBoostedTree.run(
+          Array(""),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+    }
     spark.stop()
   }
 }

@@ -87,10 +87,7 @@ object BasedonGradientBoostedTree {
     /* Measure the accuracy */
     predictionDF.show(truncate = false)
     val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    if (args(0) != "Parameters tuning")
-      println(s"ACCURACY without parameters tuning: $accuracy%")
-    else
-      println(s"ACCURACY with parameters tuning: $accuracy%")
+    println(s"ACCURACY of Gradient-Boosted Tree model: $accuracy%")
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
@@ -110,7 +107,7 @@ object BasedonGradientBoostedTree {
       .rdd
 
     // Instantiate metrics object
-    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 2)
+    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 1)
 
     // Precision by threshold
     val precision = binaryMetrics.precisionByThreshold
@@ -138,10 +135,11 @@ object BasedonGradientBoostedTree {
 
     // AUPRC
     val auPRC = binaryMetrics.areaUnderPR
-    println("Area under precision-recall curve = " + auPRC)
+    println(s"Area under precision-recall curve = ${auPRC.formatted("%.4f")}")
+
     // AUROC
     val auROC = binaryMetrics.areaUnderROC
-    println("Area under ROC = " + auROC)
+    println(s"Area under ROC = ${auROC.formatted("%.4f")}")
 
     /*// Compute thresholds used in ROC and PR curves
     val thresholds = precision.map(_._1)*/

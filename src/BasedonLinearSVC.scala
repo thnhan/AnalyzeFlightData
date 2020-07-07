@@ -43,8 +43,8 @@ object BasedonLinearSVC {
     val estimator = new LinearSVC()
       .setLabelCol("label")
       .setFeaturesCol("features")
-      .setMaxIter(200)
-      .setRegParam(0.001)
+      .setMaxIter(100)
+      .setRegParam(0.1)
 
     val evaluator = new BinaryClassificationEvaluator()
       .setLabelCol("label")

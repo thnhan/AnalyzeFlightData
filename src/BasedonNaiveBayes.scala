@@ -102,10 +102,8 @@ object BasedonNaiveBayes {
     /* Measure the accuracy */
     predictionDF.show(truncate = false)
     val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    if (args(0) != "Parameters tuning")
-      println(s"ACCURACY without parameters tuning: $accuracy%")
-    else
-      println(s"ACCURACY with parameters tuning: $accuracy%")
+    println(s"ACCURACY: $accuracy%")
+
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
