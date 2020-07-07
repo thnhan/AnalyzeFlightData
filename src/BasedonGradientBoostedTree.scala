@@ -7,7 +7,7 @@ import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, Multiclas
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
-object BasedonGDBTree {
+object BasedonGradientBoostedTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
@@ -150,7 +150,7 @@ object BasedonGDBTree {
     val roc = binaryMetrics.roc
     // Precision-Recall Curve
     val PRC = binaryMetrics.pr
-
+//    model.write.overwrite().save("GBTModel")
     roc
   }
 }

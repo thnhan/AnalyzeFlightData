@@ -81,10 +81,10 @@ object BasedonRandomForest {
 
     if (args(0) == "Parameters tuning") {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
-      println("Parameters tuning")
+      println(args(0))
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxBins,  Array(10000, 11000))
-        .addGrid(estimator.maxDepth, Array(2, 5, 10))
+        .addGrid(estimator.maxDepth, Array(5, 10, 20))
         .addGrid(estimator.impurity, Array("entropy", "gini"))
         .build()
 
@@ -94,7 +94,6 @@ object BasedonRandomForest {
     else {
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxBins,  Array(10000))
-        .addGrid(estimator.impurity, Array("gini"))
         .build()
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
@@ -123,18 +122,19 @@ object BasedonRandomForest {
     metricsDF.show()
 
     /* Random Forest features important */
-    if (args(1) == "Features Important") {
-      val featuresImportant = model
+    if (args(1) == "Features Importance") {
+      println(args(1))
+      val featuresImportance = model
         .bestModel
         .asInstanceOf[PipelineModel]
         .stages(stringIndexers.length + 1) // (stringIndexers.size + 1)'th transformer of PipelineModel is "rf" (RandomForest)
         .asInstanceOf[RandomForestClassificationModel]
         .featureImportances
 
-      assembler.getInputCols.zip(featuresImportant.toArray)
+      assembler.getInputCols.zip(featuresImportance.toArray)
         .sortBy(-_._2)
         .toSeq
-        .toDF("name", "important")
+        .toDF("name", "importance")
         .show()
     }
 
@@ -189,6 +189,7 @@ object BasedonRandomForest {
     // Precision-Recall Curve
     val PRC = binaryMetrics.pr
 
+    pipeline.save("tmp/spark-pipeline")//.write.overwrite().save(sc, )
     return roc
   }
 }

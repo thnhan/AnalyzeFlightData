@@ -12,7 +12,6 @@ object MLApp {
       .appName("MLApp")
       .getOrCreate
 
-
     import spark.implicits._
     val dataFrame = spark
       .read
@@ -74,34 +73,33 @@ object MLApp {
       "CRSArrTime"
     )
 
-    /* Run Random Forest */
+    /*/* Run Random Forest */
     BasedonRandomForest.run(
-      Array("", "Parameters tuning"),
+      Array("", "Features Importance"),
       balanceDataset,
       stringCols,
       numbericCols,
       spark
     )
 
-    return 0
     /* Run Linear SVC */
-    BasedonSVC.run(
+    BasedonLinearSVC.run(
       Array("", "Parameters tuning"),
       balanceDataset,
       stringCols,
       numbericCols,
       spark
     )
-
+*/
     /* Run Gradient-Boost Tree */
-    BasedonGDBTree.run(
+    BasedonGradientBoostedTree.run(
       Array(""),
       balanceDataset,
       stringCols,
       numbericCols,
       spark
     )
-
+/*
     /* Run DecisionTree */
     BasedonDecisionTree.run(
       Array("", "Features Important"),
@@ -109,7 +107,7 @@ object MLApp {
       stringCols,
       numbericCols,
       spark
-    )
+    )*/
     spark.stop()
   }
 }

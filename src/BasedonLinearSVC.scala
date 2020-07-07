@@ -6,7 +6,7 @@ import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
-object BasedonSVC {
+object BasedonLinearSVC {
   def run(args        : Array[String],
           dataset     : DataFrame,
           stringCols  : Array[String],
