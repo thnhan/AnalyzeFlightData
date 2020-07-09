@@ -4,7 +4,7 @@ import org.apache.spark.sql.types.{ByteType, DoubleType, IntegerType, StringType
 
 case object Global {
   val num_defaut_label: String = "10"
-  val path_file_data: String = "data/flights_reduce.csv"
+//  val path_file_data: String = "data/flights_reduce.csv"
 
   val list = List(
     "Show the FLIGHTS data",
@@ -53,39 +53,38 @@ case object Global {
     LateAircraftDelay: String
   ) extends Serializable
 
-  val schema: StructType = StructType(Array(
-    StructField("num", IntegerType),
-    StructField("no", IntegerType),
-    StructField("year", IntegerType),
-    StructField("month", IntegerType),
-    StructField("dayofmonth", ByteType),
-    StructField("dayofweek", ByteType),
-    StructField("DepTime", DoubleType),
-    StructField("CRSDepTime", DoubleType),
-    StructField("ArrTime", DoubleType),
-    StructField("CRSArrTime", DoubleType),
-    StructField("UniqueCarrier", StringType),
-    StructField("FlightNum", StringType),
-    StructField("TailNum", StringType),
-    StructField("ActualElapsedTime", DoubleType),
-    StructField("CRSElapsedTime", DoubleType),
-    StructField("AirTime", DoubleType),
-    StructField("ArrDelay", DoubleType),
-    StructField("DepDelay", DoubleType),
-    StructField("Origin", StringType),
-    StructField("Dest", StringType),
-    StructField("Distance", DoubleType),
-    StructField("TaxiIn", StringType),
-    StructField("TaxiOut", StringType),
-    StructField("Cancelled", StringType),
-    StructField("CancellationCode", StringType),
-    StructField("Diverted", StringType),
-    StructField("CarrierDelay", StringType),
-    StructField("WeatherDelay", StringType),
-    StructField("NASDelay", StringType),
-    StructField("SecurityDelay", StringType),
-    StructField("LateAircraftDelay", StringType)
-  ))
+  var schema: StructType = new StructType()
+    .add("num", IntegerType, true)
+    .add("no", IntegerType, true)
+    .add("year", IntegerType)
+    .add("month", IntegerType)
+    .add("dayofmonth", ByteType)
+    .add("dayofweek", ByteType)
+    .add("DepTime", DoubleType)
+    .add("CRSDepTime", DoubleType)
+    .add("ArrTime", DoubleType)
+    .add("CRSArrTime", DoubleType)
+    .add("UniqueCarrier", StringType)
+    .add("FlightNum", StringType)
+    .add("TailNum", StringType)
+    .add("ActualElapsedTime", DoubleType)
+    .add("CRSElapsedTime", DoubleType)
+    .add("AirTime", DoubleType)
+    .add("ArrDelay", DoubleType)
+    .add("DepDelay", DoubleType)
+    .add("Origin", StringType)
+    .add("Dest", StringType)
+    .add("Distance", DoubleType)
+    .add("TaxiIn", StringType)
+    .add("TaxiOut", StringType)
+    .add("Cancelled", StringType)
+    .add("CancellationCode", StringType)
+    .add("Diverted", StringType)
+    .add("CarrierDelay", StringType)
+    .add("WeatherDelay", StringType)
+    .add("NASDelay", StringType)
+    .add("SecurityDelay", StringType)
+    .add("LateAircraftDelay", StringType)
 
   //Creating a Case Class Flight
   case class Flight(

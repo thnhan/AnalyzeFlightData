@@ -18,7 +18,7 @@ object MLApp {
       .format("csv")
       .option("header", value = true)
       .schema(Global.schema)
-      .load("C:/Users/THNHAN/IdeaProjects/Dataset/Flight data for delay analysis/Delayed_Flights.csv")
+      .load("data\\Flights.csv")
       .as[Global.FlightDelay]
 
     val dataset = dataFrame
@@ -27,8 +27,8 @@ object MLApp {
     /* Dataset */
     println(s"Flight Data:")
     dataset.show(truncate = false)
-    println(s"Number of rows = ${dataFrame.count()}")
-    println(s"Schema:")
+    println(s"Total mumber of rows of dataset = ${dataFrame.count()}\n")
+    println(s"Schema of Dataset:")
     dataset.printSchema()
     //    dataset.createOrReplaceTempView("dataset")
 
@@ -46,7 +46,7 @@ object MLApp {
       .count().toDouble
 
     d = d / (datasetWithLabel.count().toDouble - d)
-    println(d)
+//    println(d)
     val frac = Map(0.0 -> Math.min(1.0, d), 1.0 -> Math.min(1.0, d))
     val balanceDataset = datasetWithLabel
       .stat

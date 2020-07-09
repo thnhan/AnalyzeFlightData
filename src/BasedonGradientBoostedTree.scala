@@ -4,6 +4,7 @@ import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, MulticlassMetrics}
+import org.apache.spark.mllib.linalg.Matrix
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -11,19 +12,16 @@ object BasedonGradientBoostedTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
-      ("Accuracy", metrics.accuracy.formatted("%.4f")),
-      ("Precision (Label 0)", metrics.precision(0.0).formatted("%.4f")),
-      ("Precision (Label 1)", metrics.precision(1.0).formatted("%.4f")),
-      ("Recall (Label 0)", metrics.recall(0.0).formatted("%.4f")),
-      ("Recall (Label 1)", metrics.recall(1.0).formatted("%.4f")),
-      ("FPR (Label 0)", metrics.falsePositiveRate(0.0).formatted("%.4f")),
-      ("FPR (Label 1)", metrics.falsePositiveRate(1.0).formatted("%.4f")),
-      ("F1-Score (Label 0)", metrics.fMeasure(0.0).formatted("%.4f")),
-      ("F1-Score (Label 1)", metrics.fMeasure(1.0).formatted("%.4f")),
-      ("Weighted precision", metrics.weightedPrecision.formatted("%.4f")),
-      ("Weighted recall", metrics.weightedRecall.formatted("%.4f")),
-      ("Weighted F1 score", metrics.weightedFMeasure.formatted("%.4f")),
-      ("Weighted false positive rate", metrics.weightedFalsePositiveRate.formatted("%.4f"))
+      ("Accuracy",
+        (metrics.accuracy * 100).formatted("%.2f")),
+      ("Precision",
+        ((metrics.precision(0.0) + metrics.precision(1.0)) / 2 * 100).formatted("%.2f")),
+      ("Recall",
+        ((metrics.recall(0.0) + metrics.recall(1.0)) / 2 * 100).formatted("%.2f")),
+      ("FPR",
+        ((metrics.falsePositiveRate(0.0) + metrics.falsePositiveRate(1.0)) / 2 * 100).formatted("%.2f")),
+      ("F1-Score",
+        ((metrics.fMeasure(0.0) + metrics.fMeasure(1.0)) / 2 * 100).formatted("%.2f"))
     )
   }
 
@@ -32,10 +30,10 @@ object BasedonGradientBoostedTree {
           stringCols: Array[String],
           numericCols: Array[String],
           spark: SparkSession
-         ): Unit = {
+         ): (DataFrame, Matrix) = {
 
     import spark.implicits._
-
+    println("Gradient-Boosted Tree")
     /* Splitting training, test data */
     val splits = dataset.randomSplit(Array(0.7, 0.3), seed = 36L)
     val (trainingData, testData) = (splits(0), splits(1))
@@ -80,75 +78,31 @@ object BasedonGradientBoostedTree {
 
     /* Training pipeline */
     val model = pipeline.fit(trainingData)
+
+    /* Test */
     val predictionDF = model
       .transform(testData)
       .select("label", "probability", "prediction")
-
-    /* Measure the accuracy */
-    predictionDF.show(truncate = false)
-    val accuracy = (evaluator.evaluate(predictionDF) * 100).formatted("%.2f")
-    println(s"ACCURACY of Gradient-Boosted Tree model: $accuracy%")
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
       .map(row => (row.getDouble(2), row.getDouble(0)))
       .rdd
     val multiclassMetrics = new MulticlassMetrics(predictionAndLabels)
-    val metricsDF = getMetrics(predictionAndLabels).toDF("Name", "Score")
-    metricsDF.show()
-
-    // Confusion matrix
-    println("Confusion matrix:")
-    println(multiclassMetrics.confusionMatrix)
-
     val scoreAndLabels = predictionDF
       .select("probability", "label")
       .map { case Row(prob: Vector, label: Double) => (prob(1), label) }
       .rdd
-
     // Instantiate metrics object
-    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 1)
-
-    // Precision by threshold
-    val precision = binaryMetrics.precisionByThreshold
-    precision.foreach { case (t, p) =>
-      println(s"Threshold: $t, Precision: $p")
-    }
-
-    // Recall by threshold
-    val recall = binaryMetrics.recallByThreshold
-    recall.foreach { case (t, r) =>
-      println(s"Threshold: $t, Recall: $r")
-    }
-
-    // F-measure
-    val f1Score = binaryMetrics.fMeasureByThreshold
-    f1Score.foreach { case (t, f) =>
-      println(s"Threshold: $t, F-score: $f, Beta = 1")
-    }
-
-    /*val beta = 0.5
-    val fScore = binaryMetrics.fMeasureByThreshold(beta)
-    f1Score.foreach { case (t, f) =>
-      println(s"Threshold: $t, F-score: $f, Beta = 0.5")
-    }*/
-
-    // AUPRC
-    val auPRC = binaryMetrics.areaUnderPR
-    println(s"Area under precision-recall curve = ${auPRC.formatted("%.4f")}")
-
-    // AUROC
-    val auROC = binaryMetrics.areaUnderROC
-    println(s"Area under ROC = ${auROC.formatted("%.4f")}")
-
-    /*// Compute thresholds used in ROC and PR curves
-    val thresholds = precision.map(_._1)*/
-
-    // ROC Curve
-    val roc = binaryMetrics.roc
-    // Precision-Recall Curve
-    val PRC = binaryMetrics.pr
-//    model.write.overwrite().save("GBTModel")
-    roc
+    val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 1000)
+    val auPRC = binaryMetrics.areaUnderPR // AUPRC
+    val auROC = binaryMetrics.areaUnderROC // AUROC
+    val roc = binaryMetrics.roc // ROC Curve
+    val PRC = binaryMetrics.pr // Precision-Recall Curve
+    val metricsDF = (getMetrics(predictionAndLabels) ++ Seq(
+      ("areaUnderPR", (auPRC * 100).formatted("%.2f")),
+      ("areaUnderROC", (auROC * 100).formatted("%.2f"))
+    )).toDF("Name", "Score%")
+    (metricsDF, multiclassMetrics.confusionMatrix)
   }
 }

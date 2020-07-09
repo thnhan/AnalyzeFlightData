@@ -2,7 +2,7 @@ import org.apache.spark.graphx._
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 object AirportGraph {
-  def parseFlight(line: Array[String]): Global.Flight = {
+  /*def parseFlight(line: Array[String]): Global.Flight = {
     Global.Flight(
       line(0),
       line(1),
@@ -36,9 +36,9 @@ object AirportGraph {
       line(29),
       line(30)
     )
-  }
+  }*/
 
-  val schema: StructType = new StructType()
+  /*val schema: StructType = new StructType()
     .add("YEAR", IntegerType)
     .add("MONTH", IntegerType)
     .add("DAY", IntegerType)
@@ -69,12 +69,54 @@ object AirportGraph {
     .add("SECURITY_DELAY", StringType)
     .add("AIRLINE_DELAY", StringType)
     .add("LATE_AIRCRAFT_DELAY", StringType)
-    .add("WEATHER_DELAY", StringType)
+    .add("WEATHER_DELAY", StringType)*/
 
+  case class FlightDelay
+  (
+    no: Int,
+    dayofweek: Byte,
+    deptime: Double,
+    crsdepTime: Double,
+    arrtime: Double,
+    crsarrtime: Double,
+    uniquecarrier: String,
+    flightnum: String,
+    tailnum: String,
+    actualelapsedtime: Double,
+    CRSElapsedTime: Double,
+    AirTime: Double,
+    ArrDelay: Double,
+    DepDelay: Double,
+    Origin: String,
+    Dest: String,
+    Distance: Double
+  ) extends Serializable
 
-  def parseFlight1(line: Array[String]): Global.Flight1 = {
-    Global.Flight1(line(0), line(1), line(2), line(3), line(4), line(5), line(6).toInt)
+  def parseFlight(line: Array[String]): FlightDelay = {
+    FlightDelay(
+      line(0).toInt,
+      line(1).toByte,
+      line(2).toDouble,
+      line(3).toDouble,
+      line(4).toDouble,
+      line(5).toDouble,
+      line(6),
+      line(7),
+      line(8),
+      line(9).toDouble,
+      line(10).toDouble,
+      line(11).toDouble,
+      line(12).toDouble,
+      line(13).toDouble,
+      line(14),
+      line(15),
+      line(16).toDouble)
   }
+
+
+  /*def parseFlight1(line: Array[String]): Global.Flight1 = {
+    Global.Flight1(line(0), line(1), line(2), line(3), line(4), line(5), line(6).toInt)
+  }*/
 
   def findMaxIncoming(graph: Graph[String, Int],
                       airportsMap: Map[VertexId, String]
@@ -83,7 +125,7 @@ object AirportGraph {
     maxIncoming
   }
 
-  def dijktra(graph: Graph[String, Int],  sourceId: Int): Graph[Double, Double] = {
+  def dijktra(graph: Graph[String, Double],  sourceId: Int): Graph[Double, Double] = {
     val gg = graph.mapEdges(e => 50.toDouble + e.attr.toDouble / 2)
     val initialGraph = gg.mapVertices(
       (id, _) => if (id == sourceId) 0.0 else Double.PositiveInfinity
@@ -103,7 +145,7 @@ object AirportGraph {
     sssp
   }
 
-  def getMaxDegree(graph: Graph[String, Int]): Array[(VertexId, PartitionID)] = {
+  def getMaxDegree(graph: Graph[String, Double]): Array[(VertexId, PartitionID)] = {
     def maxVertex(a: (VertexId, Int), b: (VertexId, Int)): (VertexId, Int) = {
       if (a._2 > b._2) a else b
     }

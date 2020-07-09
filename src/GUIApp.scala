@@ -3,23 +3,28 @@ import java.awt.Font
 
 import org.apache.commons.io.output.ByteArrayOutputStream
 import org.apache.spark.graphx.{Edge, Graph, VertexId}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.ml.feature.Bucketizer
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
+
 import scala.util.Try
 
 class UI extends MainFrame {
   /* Global variables */
   val num_defaut_label: Label = new Label(Global.num_defaut_label)
-  val path_file_data: String = Global.path_file_data
+//  val path_file_data: String = Global.path_file_data
+  var strCols: String = ""
 
   def restrictHeight(s: Component) {
     s.maximumSize = new Dimension(Short.MaxValue, s.preferredSize.height)
   }
 
   title = "Analyze Flight Data"
-  val nameField: TextField = new TextField {
+
+  /*val filenameField: TextField = new TextField {
     columns = 80
-  }
+  }*/
+  val filenameField = new ComboBox(List("DATA/Flights.csv", "DATA/Flights_small.csv"))
 
   val paraTuning = new CheckBox("Parameters Tuning")
   paraTuning.selected = false
@@ -30,8 +35,8 @@ class UI extends MainFrame {
   val status5 = new RadioButton("Gradient-Boosted Tree")
   status3.selected = true
   val statusGroup = new ButtonGroup(status1, status2, status3, status4, status5)
-//  val gender = new ComboBox(List("don't know", "female", "male"))
-  val query = new ComboBox(Global.list)
+  //  val gender = new ComboBox(List("don't know", "female", "male"))
+  val queryGraphX = new ComboBox(Global.list)
 
   /* Initial Comment Field */
   val commentField: TextArea = new TextArea {
@@ -40,7 +45,6 @@ class UI extends MainFrame {
     lineWrap = false
     wordWrap = false
   }
-
   //  val pressMe = new ToggleButton("Press me!")
   //  pressMe.selected = true
   //  restrictHeight(nameField)
@@ -50,9 +54,8 @@ class UI extends MainFrame {
     contents += new BoxPanel(Orientation.Horizontal) {
       contents += new Label("Flights Data")
       contents += Swing.HStrut(5)
-      contents += nameField
-      nameField.enabled = false
-      nameField.text = "file name flights.csv"
+      contents += filenameField
+      filenameField.item = "DATA/Flights_small.csv"
     }
 
     contents += Swing.VStrut(5)
@@ -72,9 +75,9 @@ class UI extends MainFrame {
 
     contents += Swing.VStrut(5)
     contents += new BoxPanel(Orientation.Horizontal) {
-      contents += new Label("Query")
+      contents += new Label("Query - GrahpX")
       contents += Swing.HStrut(20)
-      contents += query
+      contents += queryGraphX
     }
 
     contents += Swing.VStrut(5)
@@ -83,12 +86,12 @@ class UI extends MainFrame {
     contents += new ScrollPane(commentField)
     contents += Swing.VStrut(5)
     contents += new BoxPanel(Orientation.Horizontal) {
-      contents += Swing.HGlue
-      contents += Swing.VStrut(5)
       contents += Button("Train & Evaluate model") {
         trainAndEvaluate()
       }
+
       contents += Swing.HGlue
+      //      contents += Swing.VStrut(5)
       contents += Button("Process the query") {
         pressMeTwo()
       }
@@ -103,7 +106,7 @@ class UI extends MainFrame {
     border = Swing.EmptyBorder(10, 10, 10, 10)
   }
 
-  var graph: Graph[String, Int] = createGraph()
+  var graph: Graph[String, Double] = createGraph()
   val airportsMap: Map[VertexId, String] = graph.vertices.map {
     case (id, code) => id -> code
   }.collect.toList.toMap
@@ -113,51 +116,8 @@ class UI extends MainFrame {
     sys.exit(0)
   }
 
-  def trainAndEvaluate() {
-    if (status1.selected) {
-      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-      commentField.text = "Naive Bayes|Running"
-      println("Naive Bayes")
-
-      MLApp.main(Array("Naive Bayes"))
-    }
-    if (status2.selected) {
-      println("Decision Tree")
-      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-      commentField.text = "Decision Tree|Running"
-      if (paraTuning.selected)
-        MLApp.main(Array("Decision Tree", "Parameters tuning"))
-      else
-        MLApp.main(Array("Decision Tree", ""))
-    }
-    if (status3.selected) {
-      println("Linear SVC")
-      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-      commentField.text = "Linear SVC|Running"
-      if (paraTuning.selected)
-        MLApp.main(Array("Linear SVC", "Parameters tuning"))
-      else
-        MLApp.main(Array("Linear SVC", ""))
-    }
-    if (status4.selected) {
-      println("Random Forest")
-      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-      commentField.text = "Random Forest|Running"
-      if (paraTuning.selected)
-        MLApp.main(Array("Random Forest", "Parameters tuning"))
-      else
-        MLApp.main(Array("Random Forest", ""))
-    }
-    if (status5.selected) {
-      println("Gradient-Boosted Tree")
-      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-      commentField.text = "Gradient-Boosted Tree|Running"
-      MLApp.main(Array("Gradient-Boosted Tree", ""))
-    }
-  }
-
   def pressMeTwo() {
-    query.selection.item match {
+    queryGraphX.selection.item match {
       case "Show the FLIGHTS data" =>
         /* Initial */
         val r = Dialog.showInput(contents.head, "Input number of airports", initial = num_defaut_label.text)
@@ -335,9 +295,7 @@ class UI extends MainFrame {
         val temp2 = temp.sortBy(_._2, ascending = false)
         val impotant = temp2.collect
 
-        /*
-        Print
-         */
+        /* Print */
         var lines = s"Top $num the most important airports:\n"
         lines += "+------+--------------+\n"
         lines += "|  Rank|  AIRPORT CODE|\n"
@@ -580,7 +538,7 @@ class UI extends MainFrame {
     }
   }
 
-  def createGraph(): Graph[String, Int] = {
+  def createGraph():  Graph[String, Double] = {
     /* Initial */
     val conf = new SparkConf().setAppName("GuiApp").setMaster("local[2]")
     val sc = new SparkContext(conf)
@@ -591,8 +549,10 @@ class UI extends MainFrame {
     val data_df = spark
       .read
       .format("csv")
+      .schema(Global.schema)
       .option("header", value = true)
-      .load(path_file_data)
+      .load(filenameField.item) // hsjjshdsjhdgsjahdgjashdgjashdgjashdg
+      .select("No", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance")
 
     /* Print data in commentField */
     val outCapture = new ByteArrayOutputStream
@@ -607,24 +567,22 @@ class UI extends MainFrame {
     val RDD_String = data_df.rdd.map(x => {
       x.mkString(",").replace("[", "").replace("]", "")
     })
-    /*
-    Load data and parse
-     */
+//    RDD_String.take(5).foreach(println)
+
+    /* Load data and parse */
     val header_line = RDD_String.first()
     val flightsRDD = RDD_String
       .filter(line => !line.contains(header_line))
       .map(_.split(","))
       .map(line => AirportGraph.parseFlight(line))
 
-    /*
-    Create Graph from airports, edges
-     */
+    /* Create Graph from airports, edges */
     val nowhere = "nowhere"
     val airports = flightsRDD.map(flight =>
-      (flight.ORIGIN_AIRPORT.hashCode.toLong, flight.ORIGIN_AIRPORT)
+      (flight.Origin.hashCode.toLong, flight.Origin)
     ).distinct()
     val routes = flightsRDD.map(flight =>
-      ((flight.ORIGIN_AIRPORT, flight.DESTINATION_AIRPORT), flight.DISTANCE)
+      ((flight.Origin, flight.Dest), flight.Distance)
     ).distinct()
     val edges = routes.map(
       route => Edge(route._1._1.hashCode.toLong, route._1._2.hashCode.toLong, route._2)
@@ -648,24 +606,270 @@ class UI extends MainFrame {
       .read
       .format("csv")
       .option("header", value = true)
-      .load(path_file_data)
+      .schema(Global.schema)
+      .load(filenameField.item)
 
-    /*
-    Print data in commentField
-     */
+    /* Print data in commentField */
     val outCapture = new ByteArrayOutputStream
     Console.withOut(outCapture) {
       data_df.show(num_row)
     }
     val table_plt = new String(outCapture.toByteArray)
     commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-    commentField.text = table_plt + "Total number of items: " + data_df.count.toString
+    commentField.text = table_plt
+  }
+
+  def trainAndEvaluate() {
+    if (status1.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Naive Bayes"
+      println("Naive Bayes")
+      applyML(Array("Naive Bayes"))
+    }
+    if (status2.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      if (paraTuning.selected) {
+        commentField.text = "Decision Tree with Parameters tuning"
+        applyML(Array("Decision Tree", "Parameters tuning"))
+      }
+      else {
+        commentField.text = "Decision Tree without Parameters tuning"
+        applyML(Array("Decision Tree", ""))
+      }
+    }
+    if (status3.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      if (paraTuning.selected) {
+        commentField.text = "Linear SVC with Parameters tuning"
+        applyML(Array("Linear SVC", "Parameters tuning"))
+      }
+      else {
+        commentField.text = "Linear SVC without Parameters tuning"
+        applyML(Array("Linear SVC", ""))
+      }
+    }
+    if (status4.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      if (paraTuning.selected) {
+        commentField.text = "Random Forest with Parameters tuning"
+        applyML(Array("Random Forest", "Parameters tuning"))
+      }
+      else {
+        commentField.text = "Random Forest without Parameters tuning"
+        applyML(Array("Random Forest", ""))
+      }
+    }
+    if (status5.selected) {
+      commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
+      commentField.text = "Gradient-Boosted Tree"
+      applyML(Array("Gradient-Boosted Tree", ""))
+    }
+  }
+
+  /* ML application */
+  def applyML(args: Array[String]): Unit = {
+    //    Logger.getLogger("org").setLevel(Level.ERROR)
+    val spark = SparkSession
+      .builder()
+      .master("local[2]")
+      .appName("GUIApp")
+      .getOrCreate
+
+    import spark.implicits._
+    val dataFrame = spark
+      .read
+      .format("csv")
+      .option("header", value = true)
+      .schema(Global.schema)
+      .load(filenameField.item)
+    //.as[Global.FlightDelay]
+
+    val dataset = dataFrame
+      .select("No", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance")
+
+    /* Creating Dataset */
+    val bucketed = new Bucketizer()
+      .setInputCol("DepDelay")
+      .setOutputCol("label")
+      .setSplits(Array(0.0, 40.0, Double.PositiveInfinity))
+
+    val datasetWithLabel = bucketed.transform(dataset)
+    datasetWithLabel.groupBy("label").count().show()
+
+    var d = datasetWithLabel
+      .filter("label = 1.0")
+      .count().toDouble
+
+    d = d / (datasetWithLabel.count().toDouble - d)
+    //    println(d)
+    val frac = Map(0.0 -> Math.min(1.0, d), 1.0 -> Math.min(1.0, d))
+    val balanceDataset = datasetWithLabel
+      .stat
+      .sampleBy(col = "label", frac, seed = 36L)
+
+    /* */
+    val stringCols = Array(
+      //      "UniqueCarrier",
+      //      "Origin",
+      //      "Dest",
+      "FlightNum",
+      "TailNum")
+
+    val numbericCols = Array(
+      //      "DayOfWeek",
+      //      "ActualElapsedTime",
+      //      "CRSElapsedTime",
+      //      "AirTime",
+      //      "ArrDelay",
+      //      "Distance",
+      "DepTime",
+      "CRSDepTime",
+      "ArrTime",
+      "CRSArrTime"
+    )
+
+    if (args(0) == "Random Forest" || args(0) == "Decision Tree")
+      group1(args, dataset, balanceDataset, stringCols, numbericCols, spark)
+    else
+      group2(args, dataset, balanceDataset, stringCols, numbericCols, spark)
+  }
+
+  def group1(args: Array[String],
+             dataset: DataFrame, balanceDataset: DataFrame,
+             stringCols: Array[String],
+             numbericCols: Array[String],
+             spark: SparkSession
+            ): Unit = {
+
+    val (feaImp, metricsDF, confusionMatrix) = args(0) match {
+      case "Decision Tree" =>
+        BasedonDecisionTree.run(
+          Array(args(1), "Features Important"),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+
+      case "Random Forest" =>
+        BasedonRandomForest.run(
+          Array(args(1), "Features Importance"),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+    }
+
+    /* Print dataset */
+    println(s"Flight Data:")
+    dataset.show(truncate = false)
+    println(s"Total mumber of rows of dataset = ${dataset.count()}\n")
+    println(s"Schema of Dataset:")
+    dataset.printSchema()
+    println(s"Columns are used as features:")
+    for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+    print("\n\n")
+    println("Feature Importance")
+    feaImp.show(false)
+    /* Print scores */
+    println(s"Scores of classifier ${args(0)}:")
+    metricsDF.show(truncate = false)
+    println("Confusion matrix:")
+    println(confusionMatrix)
+
+    /* Print */
+    val outCapture = new ByteArrayOutputStream
+    Console.withOut(outCapture) {
+      /* Print dataset */
+      println(s"Flight Data:")
+      dataset.show(truncate = false)
+      println(s"Total mumber of rows of dataset = ${dataset.count()}\n")
+      println(s"Schema of Dataset:")
+      dataset.printSchema()
+      /* Print scores */
+      println(s"Scores:")
+      metricsDF.show(truncate = false)
+      println("Confusion matrix:")
+      println(confusionMatrix)
+    }
+    val table_plt = new String(outCapture.toByteArray)
+    commentField.text += "\n\n" + table_plt
+  }
+
+  def group2(args: Array[String],
+             dataset: DataFrame, balanceDataset: DataFrame,
+             stringCols: Array[String],
+             numbericCols: Array[String],
+             spark: SparkSession
+            ): Unit = {
+
+    val (metricsDF, confusionMatrix) = args(0) match {
+      case "Naive Bayes" =>
+        BasedonNaiveBayes.run(
+          Array(""),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+      case "Linear SVC" =>
+        BasedonLinearSVC.run(
+          Array(args(1)), // args(1): Parameters Tuning or Not
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+      case "Gradient-Boosted Tree" =>
+        /*Run Gradient-Boost Tree*/
+        BasedonGradientBoostedTree.run(
+          Array(""),
+          balanceDataset,
+          stringCols,
+          numbericCols,
+          spark
+        )
+    }
+
+    /* Print */
+    val outCapture = new ByteArrayOutputStream
+    Console.withOut(outCapture) {
+      /* Print dataset */
+      println(s"Flight Data:")
+      dataset.show(truncate = false)
+      println(s"Total mumber of rows of dataset = ${dataset.count()}\n")
+      println(s"Schema of Dataset:")
+      dataset.printSchema()
+      println(s"Columns are used as features:")
+      for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+      print("\n\n")
+      /* Print scores */
+      println(s"Scores of classifier ${args(0)}:")
+      metricsDF.show(truncate = false)
+      println("Confusion matrix:")
+      println(confusionMatrix)
+    }
+    val table_plt = new String(outCapture.toByteArray)
+    commentField.text += "\n\n" + table_plt
+
+    println(s"Flight Data:")
+    dataset.show(truncate = false)
+    println(s"Total mumber of rows of dataset = ${dataset.count()}\n")
+    println(s"Schema of Dataset:")
+    dataset.printSchema()
+    println(s"Columns are used as features:")
+    for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+    print("\n\n")
+    /* Print scores */
+    println(s"Scores of classifier ${args(0)}:")
+    metricsDF.show(truncate = false)
+    println("Confusion matrix:")
+    println(confusionMatrix)
   }
 }
 
-object UIApp {
-  def main(args: Array[String]): Unit = {
-    val ui = new UI
-    ui.visible = true
-  }
+object GUIApp extends App {
+  val ui = new UI
+  ui.visible = true
 }
