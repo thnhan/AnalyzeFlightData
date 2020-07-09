@@ -608,6 +608,7 @@ class UI extends MainFrame {
       .option("header", value = true)
       .schema(Global.schema)
       .load(filenameField.item)
+      .select("No", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance")
 
     /* Print data in commentField */
     val outCapture = new ByteArrayOutputStream
