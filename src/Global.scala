@@ -1,6 +1,6 @@
-//import breeze.plot.{Figure, plot}
-//import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.types.{ByteType, DoubleType, IntegerType, StringType, StructField, StructType}
+/*import breeze.plot.{Figure, plot}
+import org.apache.spark.sql.DataFrame*/
+import org.apache.spark.sql.types.{ByteType, DoubleType, IntegerType, StringType, StructType}
 
 case object Global {
   val num_defaut_label: String = "10"
@@ -54,8 +54,8 @@ case object Global {
   ) extends Serializable
 
   var schema: StructType = new StructType()
-    .add("num", IntegerType, true)
-    .add("no", IntegerType, true)
+    .add("num", IntegerType, nullable = true)
+    .add("no", IntegerType, nullable = true)
     .add("year", IntegerType)
     .add("month", IntegerType)
     .add("dayofmonth", ByteType)
