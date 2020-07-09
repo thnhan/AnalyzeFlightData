@@ -216,19 +216,19 @@ class UI extends MainFrame {
 
           var inf1 = index.toString
           len = inf1.length
-          for (i <- 1 to (6 - len)) {
+          for (_ <- 1 to (6 - len)) {
             inf1 = " " + inf1
           }
 
           var inf2 = x._1
           len = inf2.length
-          for (i <- 1 to (14 - len)) {
+          for (_ <- 1 to (14 - len)) {
             inf2 = " " + inf2
           }
 
           var inf3 = x._2.toString
           len = inf3.length
-          for (i <- 1 to (26 - len)) {
+          for (_ <- 1 to (26 - len)) {
             inf3 = " " + inf3
           }
           lines += s"|$inf1|$inf2|$inf3|\n"
@@ -270,7 +270,7 @@ class UI extends MainFrame {
 
           var inf3 = x._2.toString
           len = inf3.length
-          for (i <- 1 to (26 - len)) {
+          for (_ <- 1 to (26 - len)) {
             inf3 = " " + inf3
           }
           lines += s"|$inf1|$inf2|$inf3|\n"
@@ -305,12 +305,12 @@ class UI extends MainFrame {
           index += 1
           var inf1 = index.toString
           var len = inf1.length
-          for (i <- 1 to (6 - len)) {
+          for (_ <- 1 to (6 - len)) {
             inf1 = " " + inf1
           }
           var inf2 = airportsMap(x._1)
           len = inf2.length
-          for (i <- 1 to (14 - len)) {
+          for (_ <- 1 to (14 - len)) {
             inf2 = " " + inf2
           }
           lines += s"|$inf1|$inf2|\n"
@@ -328,7 +328,7 @@ class UI extends MainFrame {
         }
 
         /* Initial Graph */
-        val graph_cost = graph.mapEdges(e => 50.toDouble + e.attr.toDouble / 2)
+        val graph_cost = graph.mapEdges(e => 50.toDouble + e.attr / 2)
         /* Find all shortest paths form source vertex */
         val result = ShortestOutgoing.run(graph_cost, sourceAirport.hashCode)
 
@@ -339,7 +339,7 @@ class UI extends MainFrame {
         var index = 0
         for (x <- result.vertices.filter(
           v => v._2._1 < Double.PositiveInfinity && v._2._2.length > 2
-        ).take(10)) {
+        ).take(num = 10)) {
           index += 1
           var len = 0
 
@@ -362,7 +362,7 @@ class UI extends MainFrame {
 
           var inf3 = x._2._1.toString
           len = inf3.length
-          for (i <- 1 to (10 - len)) {
+          for (_ <- 1 to (10 - len)) {
             inf3 = " " + inf3
           }
           lines += s"|$inf1|$inf2|$inf3|\n"
@@ -393,11 +393,11 @@ class UI extends MainFrame {
             var inf3: String = x.attr.toString
 
             var len = inf1.length
-            for (i <- 1 to (14 - len)) {
+            for (_ <- 1 to (14 - len)) {
               inf1 = " " + inf1
             }
             len = inf2.length
-            for (i <- 1 to (19 - len)) {
+            for (_ <- 1 to (19 - len)) {
               inf2 = " " + inf2
             }
             len = inf3.length
@@ -418,11 +418,11 @@ class UI extends MainFrame {
             var inf1: String = airportsMap(x._1)
             var inf2: String = x._2.toString
             var len = inf1.length
-            for (i <- 1 to (14 - len)) {
+            for (_ <- 1 to (14 - len)) {
               inf1 = " " + inf1
             }
             len = inf2.length
-            for (i <- 1 to (9 - len)) {
+            for (_ <- 1 to (9 - len)) {
               inf2 = " " + inf2
             }
             lines += s"|$inf1|$inf2|\n"
@@ -446,14 +446,14 @@ class UI extends MainFrame {
           var inf1: String = No.toString
           var inf2: String = x._1.toString
           var inf3: String = x._2
-          var len = inf1.length
-          for (i <- 1 to (6 - inf1.length)) {
+//          var len = inf1.length
+          for (_ <- 1 to (6 - inf1.length)) {
             inf1 = " " + inf1
           }
-          for (i <- 1 to (14 - inf2.length)) {
+          for (_ <- 1 to (14 - inf2.length)) {
             inf2 = " " + inf2
           }
-          for (i <- 1 to (14 - inf3.length)) {
+          for (_ <- 1 to (14 - inf3.length)) {
             inf3 = " " + inf3
           }
           lines += s"|$inf1|$inf2|$inf3|\n"
@@ -474,16 +474,16 @@ class UI extends MainFrame {
           var inf2: String = (x.srcId, x.srcAttr).toString
           var inf3: String = (x.dstId, x.dstAttr).toString
           var inf4: String = x.attr.toString
-          for (i <- 1 to (6 - inf1.length)) {
+          for (_ <- 1 to (6 - inf1.length)) {
             inf1 = " " + inf1
           }
-          for (i <- 1 to (16 - inf2.length)) {
+          for (_ <- 1 to (16 - inf2.length)) {
             inf2 = " " + inf2
           }
-          for (i <- 1 to (16 - inf3.length)) {
+          for (_ <- 1 to (16 - inf3.length)) {
             inf3 = " " + inf3
           }
-          for (i <- 1 to (12 - inf4.length)) {
+          for (_ <- 1 to (12 - inf4.length)) {
             inf4 = " " + inf4
           }
           lines += s"|$inf1|$inf2|$inf3|$inf4|\n"
@@ -517,16 +517,16 @@ class UI extends MainFrame {
           var inf2: String = (x.srcId, x.srcAttr).toString
           var inf3: String = (x.dstId, x.dstAttr).toString
           var inf4: String = x.attr.toString
-          for (i <- 1 to (6 - inf1.length)) {
+          for (_ <- 1 to (6 - inf1.length)) {
             inf1 = " " + inf1
           }
-          for (i <- 1 to (16 - inf2.length)) {
+          for (_ <- 1 to (16 - inf2.length)) {
             inf2 = " " + inf2
           }
-          for (i <- 1 to (16 - inf3.length)) {
+          for (_ <- 1 to (16 - inf3.length)) {
             inf3 = " " + inf3
           }
-          for (i <- 1 to (12 - inf4.length)) {
+          for (_ <- 1 to (12 - inf4.length)) {
             inf4 = " " + inf4
           }
           lines += s"|$inf1|$inf2|$inf3|$inf4|\n"
@@ -617,7 +617,7 @@ class UI extends MainFrame {
     }
     val table_plt = new String(outCapture.toByteArray)
     commentField.font = new Font("Monospaced", Font.TRUETYPE_FONT, 16)
-    commentField.text = table_plt
+    commentField.text = table_plt + "Total number of items" + data_df.count()
   }
 
   def trainAndEvaluate() {
@@ -676,7 +676,7 @@ class UI extends MainFrame {
       .appName("GUIApp")
       .getOrCreate
 
-    import spark.implicits._
+//    import spark.implicits._
     val dataFrame = spark
       .read
       .format("csv")
@@ -769,7 +769,7 @@ class UI extends MainFrame {
     println(s"Schema of Dataset:")
     dataset.printSchema()
     println(s"Columns are used as features:")
-    for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+    for (elem <- stringCols ++ numbericCols) print(elem + ",")
     print("\n\n")
     println("Feature Importance")
     feaImp.show(false)
@@ -843,7 +843,7 @@ class UI extends MainFrame {
       println(s"Schema of Dataset:")
       dataset.printSchema()
       println(s"Columns are used as features:")
-      for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+      for (elem <- stringCols ++ numbericCols) print(elem + ",")
       print("\n\n")
       /* Print scores */
       println(s"Scores of classifier ${args(0)}:")
@@ -860,7 +860,7 @@ class UI extends MainFrame {
     println(s"Schema of Dataset:")
     dataset.printSchema()
     println(s"Columns are used as features:")
-    for (elem <- (stringCols ++ numbericCols)) print(elem + ",")
+    for (elem <- stringCols ++ numbericCols) print(elem + ",")
     print("\n\n")
     /* Print scores */
     println(s"Scores of classifier ${args(0)}:")
