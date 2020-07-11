@@ -35,6 +35,7 @@ object BasedonLinearSVC {
 
     import spark.implicits._
     println("Linear SVC")
+
     /* Splitting training, test data */
     val splits = dataset.randomSplit(Array(0.7, 0.3), seed = 36L)
     val (trainingData, testData) = (splits(0).cache(), splits(1).cache())

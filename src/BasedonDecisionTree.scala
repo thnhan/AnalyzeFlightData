@@ -35,6 +35,7 @@ object BasedonDecisionTree {
 
     import spark.implicits._
     println("Decision Tree")
+
     /* Splitting training, test data */
     val splits = dataset.randomSplit(Array(0.7, 0.3), seed = 36L)
     val (trainingData, testData) = (splits(0).cache(), splits(1).cache())
@@ -50,7 +51,7 @@ object BasedonDecisionTree {
         .setOutputCol("Indexed" + col)
         .setHandleInvalid("keep")
     )
-//    println("-------")
+
     /* Assemble features */
     val featureCols = stringCols.map("Indexed" + _) ++ numericCols
     val assembler = new VectorAssembler()
@@ -61,7 +62,7 @@ object BasedonDecisionTree {
     val estimator = new DecisionTreeClassifier()
       .setLabelCol("label")
       .setFeaturesCol("features")
-//      .setMaxBins(10000)
+    //      .setMaxBins(10000)
 
     /* Initial a pipeline */
     val steps = stringIndexers ++ Array(assembler, estimator)
@@ -73,18 +74,15 @@ object BasedonDecisionTree {
       .setRawPredictionCol("prediction")
 
     /* Initial a Cross Validator */
-
     val validator = new CrossValidator()
       .setEstimator(pipeline)
       .setEvaluator(evaluator)
     /*.setNumFolds(agrs(1).toInt)*/
-//    println("-------")
 
     if (args(0) == "Parameters tuning") {
       /* Parameters tuning with CrossValidator and ParamGridBuilder */
-//      println("Parameters tuning")
       val paramGrid = new ParamGridBuilder()
-        .addGrid(estimator.maxBins,  Array(10000, 11000))
+        .addGrid(estimator.maxBins, Array(10000, 11000))
         .addGrid(estimator.maxDepth, Array(2, 5, 10))
         .addGrid(estimator.impurity, Array("entropy", "gini"))
         .build()
@@ -94,7 +92,7 @@ object BasedonDecisionTree {
     }
     else {
       val paramGrid = new ParamGridBuilder()
-        .addGrid(estimator.maxBins,  Array(10000))
+        .addGrid(estimator.maxBins, Array(10000))
         .addGrid(estimator.impurity, Array("gini"))
         .build()
       /* Add paramGrid into Cross Validation */
@@ -102,7 +100,6 @@ object BasedonDecisionTree {
     }
 
     /* Training pipeline */
-//    println("train")
     val model = validator.fit(trainingData)
 
     /* Test */
@@ -111,21 +108,18 @@ object BasedonDecisionTree {
       .select("label", "probability", "prediction")
       .cache()
 
-    /* Random Forest features important */
-//    if (args(1) == "Features Important") {
-//      println("Features Important")
-      val featuresImportant = model
-        .bestModel
-        .asInstanceOf[PipelineModel]
-        .stages(stringIndexers.length + 1) // (stringIndexers.size + 1)'th transformer of PipelineModel is "rf" (RandomForest)
-        .asInstanceOf[DecisionTreeClassificationModel]
-        .featureImportances
+    /* Features Importance */
+    val featuresImportant = model
+      .bestModel
+      .asInstanceOf[PipelineModel]
+      .stages(stringIndexers.length + 1) // (stringIndexers.size + 1)'th transformer of PipelineModel is "rf" (RandomForest)
+      .asInstanceOf[DecisionTreeClassificationModel]
+      .featureImportances
 
-      val feaImpDF = assembler.getInputCols.zip(featuresImportant.toArray)
-        .sortBy(-_._2)
-        .toSeq
-        .toDF("name", "important")
-//    }
+    val feaImpDF = assembler.getInputCols.zip(featuresImportant.toArray)
+      .sortBy(-_._2)
+      .toSeq
+      .toDF("name", "important")
 
     // Compute raw scores on the test set
     val predictionAndLabels: RDD[(Double, Double)] = predictionDF
@@ -136,6 +130,7 @@ object BasedonDecisionTree {
       .select("probability", "label")
       .map { case Row(prob: Vector, label: Double) => (prob(1), label) }
       .rdd
+
     // Instantiate metrics object
     val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 1000)
     val auPRC = binaryMetrics.areaUnderPR // AUPRC
@@ -147,9 +142,6 @@ object BasedonDecisionTree {
       ("areaUnderROC", (auROC * 100).formatted("%.2f"))
     )).toDF("Name", "Score%")
 
-//    feaImpDF.show()
-//    metricsDF.show()
-//    println(multiclassMetrics.confusionMatrix)
     (feaImpDF, metricsDF, multiclassMetrics.confusionMatrix)
   }
 }

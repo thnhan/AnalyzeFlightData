@@ -34,6 +34,7 @@ object BasedonGradientBoostedTree {
 
     import spark.implicits._
     println("Gradient-Boosted Tree")
+
     /* Splitting training, test data */
     val splits = dataset.randomSplit(Array(0.7, 0.3), seed = 36L)
     val (trainingData, testData) = (splits(0), splits(1))

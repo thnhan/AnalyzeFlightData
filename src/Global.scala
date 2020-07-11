@@ -131,24 +131,6 @@ case object Global {
                       DISTANCE: Int
                     )
 
-  /*
-    def parseFlight1(str: String): Flight1 = {
-      val line = str.split(",")
-      new Flight1(
-        line(0).toByte,
-        line(1).toByte,
-        line(2).toByte,
-        line(3).toByte,
-        line(4),
-        line(5),
-        line(6).toInt
-      )
-    }
-    Defining a Parse String function to parse input into Flight class
-    function to parse input into 'Flight' class
-   */
-
-
   /*def plottingROC(rocDF: DataFrame) = {
     val fig = Figure()
     val chart = fig.subplot(0)

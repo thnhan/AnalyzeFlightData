@@ -107,7 +107,6 @@ object BasedonRandomForest {
       .select("label", "probability", "prediction")
 
     /* Random Forest features important */
-    //    if (args(1) == "Features Importance") {
     println(args(1))
     val featuresImportance = model
       .bestModel

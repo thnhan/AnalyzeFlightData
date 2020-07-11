@@ -41,7 +41,6 @@ object BasedonNaiveBayes {
     trainingData.groupBy("label").count.show()
     println("Total number of samples for test")
     testData.groupBy("label").count.show()
-//    trainingData.printSchema()
 
     /* Transform string columns to categorical columns */
     val stringIndexers = stringCols.map(col =>

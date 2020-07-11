@@ -1,5 +1,4 @@
 import org.apache.spark.graphx._
-import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 object AirportGraph {
   /*def parseFlight(line: Array[String]): Global.Flight = {
@@ -71,6 +70,10 @@ object AirportGraph {
     .add("LATE_AIRCRAFT_DELAY", StringType)
     .add("WEATHER_DELAY", StringType)*/
 
+  /*def parseFlight1(line: Array[String]): Global.Flight1 = {
+    Global.Flight1(line(0), line(1), line(2), line(3), line(4), line(5), line(6).toInt)
+  }*/
+
   case class FlightDelay
   (
     no: Int,
@@ -113,11 +116,6 @@ object AirportGraph {
       line(16).toDouble)
   }
 
-
-  /*def parseFlight1(line: Array[String]): Global.Flight1 = {
-    Global.Flight1(line(0), line(1), line(2), line(3), line(4), line(5), line(6).toInt)
-  }*/
-
   def findMaxIncoming(graph: Graph[String, Int],
                       airportsMap: Map[VertexId, String]
                      ): Array[(String, Int)] = {
@@ -126,7 +124,7 @@ object AirportGraph {
   }
 
   def dijktra(graph: Graph[String, Double],  sourceId: Int): Graph[Double, Double] = {
-    val gg = graph.mapEdges(e => 50.toDouble + e.attr.toDouble / 2)
+    val gg = graph.mapEdges(e => 50.toDouble + e.attr / 2)
     val initialGraph = gg.mapVertices(
       (id, _) => if (id == sourceId) 0.0 else Double.PositiveInfinity
     )
