@@ -13,8 +13,8 @@ object BasedonDecisionTree {
   def getMetrics(predictionAndLabels: RDD[(Double, Double)]): Seq[(String, String)] = {
     val metrics = new MulticlassMetrics(predictionAndLabels)
     Seq(
-      ("Accuracy",
-        (metrics.accuracy * 100).formatted("%.2f")),
+//      ("Accuracy",
+//        (accuracy * 100).formatted("%.2f")),
       ("Precision",
         ((metrics.precision(0.0) + metrics.precision(1.0)) / 2 * 100).formatted("%.2f")),
       ("Recall",
@@ -132,6 +132,7 @@ object BasedonDecisionTree {
       .rdd
 
     // Instantiate metrics object
+    val accuracy = evaluator.evaluate(predictionDF)
     val binaryMetrics = new BinaryClassificationMetrics(scoreAndLabels, numBins = 1000)
     val auPRC = binaryMetrics.areaUnderPR // AUPRC
     val auROC = binaryMetrics.areaUnderROC // AUROC
@@ -139,7 +140,8 @@ object BasedonDecisionTree {
     val PRC = binaryMetrics.pr // Precision-Recall Curve
     val metricsDF = (getMetrics(predictionAndLabels) ++ Seq(
       ("areaUnderPR", (auPRC * 100).formatted("%.2f")),
-      ("areaUnderROC", (auROC * 100).formatted("%.2f"))
+      ("areaUnderROC", (auROC * 100).formatted("%.2f")),
+      ("Accuracy", (accuracy * 100).formatted("%.2f"))
     )).toDF("Name", "Score%")
 
     (feaImpDF, metricsDF, multiclassMetrics.confusionMatrix)

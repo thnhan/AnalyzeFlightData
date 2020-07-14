@@ -126,7 +126,7 @@ object BasedonLinearSVC {
       ("areaUnderPR", (auPRC * 100).formatted("%.2f")),
       ("areaUnderROC", (auROC * 100).formatted("%.2f"))
     )).toDF("Name", "Score%")
-    //    metricsDF.show()
+
     (metricsDF, multiclassMetrics.confusionMatrix)
   }
 }

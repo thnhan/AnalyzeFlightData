@@ -19,7 +19,7 @@ object MLApp {
       .option("header", value = true)
       .schema(Global.schema)
       .load("data\\Flights.csv")
-      .as[Global.FlightDelay]
+//      .as[Global.FlightDelay]
 
     val dataset = dataFrame
       .select("No", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance")
@@ -46,7 +46,6 @@ object MLApp {
       .count().toDouble
 
     d = d / (datasetWithLabel.count().toDouble - d)
-//    println(d)
     val frac = Map(0.0 -> Math.min(1.0, d), 1.0 -> Math.min(1.0, d))
     val balanceDataset = datasetWithLabel
       .stat
@@ -60,7 +59,7 @@ object MLApp {
       "FlightNum",
       "TailNum")
 
-    val numbericCols = Array(
+    val numberCols = Array(
       //      "DayOfWeek",
       //      "ActualElapsedTime",
       //      "CRSElapsedTime",
@@ -79,7 +78,7 @@ object MLApp {
           Array(""),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
 
@@ -88,7 +87,7 @@ object MLApp {
           Array(args(1), "Features Important"),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
 
@@ -97,7 +96,7 @@ object MLApp {
           Array(args(1)), // args(1): Parameters Tuning or Not
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
 
@@ -106,7 +105,7 @@ object MLApp {
           Array(args(1), "Features Importance"),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
 
@@ -116,7 +115,7 @@ object MLApp {
           Array(""),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
     }

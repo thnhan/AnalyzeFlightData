@@ -4,7 +4,7 @@ import java.awt.Font
 import org.apache.commons.io.output.ByteArrayOutputStream
 import org.apache.spark.graphx.{Edge, Graph, VertexId}
 import org.apache.spark.ml.feature.Bucketizer
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.Try
@@ -12,7 +12,7 @@ import scala.util.Try
 class UI extends MainFrame {
   /* Global variables */
   val num_defaut_label: Label = new Label(Global.num_defaut_label)
-//  val path_file_data: String = Global.path_file_data
+  //  val path_file_data: String = Global.path_file_data
   var strCols: String = ""
 
   def restrictHeight(s: Component) {
@@ -75,7 +75,7 @@ class UI extends MainFrame {
 
     contents += Swing.VStrut(5)
     contents += new BoxPanel(Orientation.Horizontal) {
-      contents += new Label("Query - GrahpX")
+      contents += new Label("Query - GraphX")
       contents += Swing.HStrut(20)
       contents += queryGraphX
     }
@@ -110,11 +110,6 @@ class UI extends MainFrame {
   val airportsMap: Map[VertexId, String] = graph.vertices.map {
     case (id, code) => id -> code
   }.collect.toList.toMap
-
-  def reportAndClose() {
-    println("Goodbye TRAN HOAI NHAN")
-    sys.exit(0)
-  }
 
   def pressMeTwo() {
     queryGraphX.selection.item match {
@@ -204,7 +199,10 @@ class UI extends MainFrame {
           case None =>
         }
 
-        val newIn = graph.inDegrees.collect.sortWith(_._2 > _._2).map(x => (airportsMap(x._1), x._2))
+        val newIn = graph
+          .inDegrees.collect
+          .sortWith(_._2 > _._2)
+          .map(x => (airportsMap(x._1), x._2))
         var lines = s"Top $num the airport with the highest incoming flights:\n"
         lines += "+------+--------------+--------------------------+\n"
         lines += "|    No|  AIRPORT CODE|Number of incoming flights|\n"
@@ -291,9 +289,9 @@ class UI extends MainFrame {
         /* Use PageRank algorithm to score airports */
         val ranks = graph.pageRank(0.1).vertices
         //.filter(v => airportsMap(v._1) != "nowhere")
-        val temp = ranks.join(graph.vertices)
-        val temp2 = temp.sortBy(_._2, ascending = false)
-        val impotant = temp2.collect
+        val temp = ranks.join(graph.vertices).sortBy(_._2._1, ascending = false)
+//        val temp2 = temp.sortBy(_._2, ascending = false)
+        val impotant = temp.collect
 
         /* Print */
         var lines = s"Top $num the most important airports:\n"
@@ -328,11 +326,11 @@ class UI extends MainFrame {
         }
 
         /* Initial Graph */
-        val graph_cost = graph.mapEdges(e => 50.toDouble + e.attr / 2)
+        val graphAndCost = graph.mapEdges(e => 50.toDouble + e.attr / 2)
         /* Find all shortest paths form source vertex */
-        val result = ShortestOutgoing.run(graph_cost, sourceAirport.hashCode)
+        val result = ShortestOutgoing.run(graphAndCost, sourceAirport.hashCode)
 
-        var lines = s"5 paths from $sourceAirport airport and their lowest flight cost:\n"
+        var lines = s"Paths from $sourceAirport airport and their lowest flight cost:\n"
         lines += "+------+-------------------------------+----------+\n"
         lines += "|    No|                           Path|      Cost|\n"
         lines += "+------+-------------------------------+----------+\n"
@@ -446,7 +444,7 @@ class UI extends MainFrame {
           var inf1: String = No.toString
           var inf2: String = x._1.toString
           var inf3: String = x._2
-//          var len = inf1.length
+          //          var len = inf1.length
           for (_ <- 1 to (6 - inf1.length)) {
             inf1 = " " + inf1
           }
@@ -538,7 +536,7 @@ class UI extends MainFrame {
     }
   }
 
-  def createGraph():  Graph[String, Double] = {
+  def createGraph(): Graph[String, Double] = {
     /* Initial */
     val conf = new SparkConf().setAppName("GuiApp").setMaster("local[2]")
     val sc = new SparkContext(conf)
@@ -547,11 +545,10 @@ class UI extends MainFrame {
     /* Load data as a DataFrame */
     val spark = SparkSession.builder().getOrCreate()
     val data_df = spark
-      .read
-      .format("csv")
+      .read.format("csv")
       .schema(Global.schema)
       .option("header", value = true)
-      .load(filenameField.item) // hsjjshdsjhdgsjahdgjashdgjashdgjashdg
+      .load(filenameField.item)
       .select("No", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance")
 
     /* Print data in commentField */
@@ -564,30 +561,29 @@ class UI extends MainFrame {
     commentField.text = table_plt + "Total number of items: " + data_df.count.toString
 
     /* Convert DataFrame to RDD[String] */
-    val RDD_String = data_df.rdd.map(x => {
-      x.mkString(",").replace("[", "").replace("]", "")
-    })
-//    RDD_String.take(5).foreach(println)
+    val flightsRDD = data_df
+      .select("Origin", "Dest", "Distance")
+      .rdd
 
-    /* Load data and parse */
-    val header_line = RDD_String.first()
-    val flightsRDD = RDD_String
-      .filter(line => !line.contains(header_line))
-      .map(_.split(","))
-      .map(line => AirportGraph.parseFlight(line))
+    /* Create a Vertices set */
+    val airports = flightsRDD
+      .map { case Row(origin: String, dest: String, _: Double) =>
+        origin + "," + dest }
+      .flatMap(_.split(","))
+      .distinct()
+      .map(vertex => (vertex.hashCode.toLong, vertex))
 
-    /* Create Graph from airports, edges */
-    val nowhere = "nowhere"
-    val airports = flightsRDD.map(flight =>
-      (flight.Origin.hashCode.toLong, flight.Origin)
-    ).distinct()
-    val routes = flightsRDD.map(flight =>
-      ((flight.Origin, flight.Dest), flight.Distance)
-    ).distinct()
-    val edges = routes.map(
+    /* Creating an Edges set */
+    val edges = flightsRDD.distinct()
+      .map { case Row(origin: String, dest: String, dist: Double) =>
+        ((origin, dest), dist) }.map(
       route => Edge(route._1._1.hashCode.toLong, route._1._2.hashCode.toLong, route._2)
     )
+
+    /* Createing a Graph from airports (vertices) and edges */
+    val nowhere = "nowhere"
     val graph = Graph(airports, edges, nowhere)
+
     graph
   }
 
@@ -603,8 +599,7 @@ class UI extends MainFrame {
     /* Load data as a DataFrame */
     val spark = SparkSession.builder().getOrCreate()
     val data_df = spark
-      .read
-      .format("csv")
+      .read.format("csv")
       .option("header", value = true)
       .schema(Global.schema)
       .load(filenameField.item)
@@ -676,7 +671,7 @@ class UI extends MainFrame {
       .appName("GUIApp")
       .getOrCreate
 
-//    import spark.implicits._
+    //    import spark.implicits._
     val dataFrame = spark
       .read
       .format("csv")
@@ -717,7 +712,7 @@ class UI extends MainFrame {
       "TailNum")
 
     val numbericCols = Array(
-      //      "DayOfWeek",
+       "DayOfWeek",
       //      "ActualElapsedTime",
       //      "CRSElapsedTime",
       //      "AirTime",
@@ -737,8 +732,7 @@ class UI extends MainFrame {
 
   def group1(args: Array[String],
              dataset: DataFrame, balanceDataset: DataFrame,
-             stringCols: Array[String],
-             numbericCols: Array[String],
+             stringCols: Array[String], numberCols: Array[String],
              spark: SparkSession
             ): Unit = {
 
@@ -748,7 +742,7 @@ class UI extends MainFrame {
           Array(args(1), "Features Important"),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
 
@@ -757,7 +751,7 @@ class UI extends MainFrame {
           Array(args(1), "Features Importance"),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
     }
@@ -769,7 +763,7 @@ class UI extends MainFrame {
     println(s"Schema of Dataset:")
     dataset.printSchema()
     println(s"Columns are used as features:")
-    for (elem <- stringCols ++ numbericCols) print(elem + ",")
+    for (elem <- stringCols ++ numberCols) print(elem + ",")
     print("\n\n")
     println("Feature Importance")
     feaImp.show(false)
@@ -800,8 +794,7 @@ class UI extends MainFrame {
 
   def group2(args: Array[String],
              dataset: DataFrame, balanceDataset: DataFrame,
-             stringCols: Array[String],
-             numbericCols: Array[String],
+             stringCols: Array[String], numberCols: Array[String],
              spark: SparkSession
             ): Unit = {
 
@@ -811,7 +804,7 @@ class UI extends MainFrame {
           Array(""),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
       case "Linear SVC" =>
@@ -819,7 +812,7 @@ class UI extends MainFrame {
           Array(args(1)), // args(1): Parameters Tuning or Not
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
       case "Gradient-Boosted Tree" =>
@@ -828,7 +821,7 @@ class UI extends MainFrame {
           Array(""),
           balanceDataset,
           stringCols,
-          numbericCols,
+          numberCols,
           spark
         )
     }
@@ -843,7 +836,7 @@ class UI extends MainFrame {
       println(s"Schema of Dataset:")
       dataset.printSchema()
       println(s"Columns are used as features:")
-      for (elem <- stringCols ++ numbericCols) print(elem + ",")
+      for (elem <- stringCols ++ numberCols) print(elem + ",")
       print("\n\n")
       /* Print scores */
       println(s"Scores of classifier ${args(0)}:")
@@ -860,13 +853,18 @@ class UI extends MainFrame {
     println(s"Schema of Dataset:")
     dataset.printSchema()
     println(s"Columns are used as features:")
-    for (elem <- stringCols ++ numbericCols) print(elem + ",")
+    for (elem <- stringCols ++ numberCols) print(elem + ",")
     print("\n\n")
     /* Print scores */
     println(s"Scores of classifier ${args(0)}:")
     metricsDF.show(truncate = false)
     println("Confusion matrix:")
     println(confusionMatrix)
+  }
+
+  def reportAndClose() {
+    println("Goodbye TRAN HOAI NHAN")
+    sys.exit(0)
   }
 }
 
