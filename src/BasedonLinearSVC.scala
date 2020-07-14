@@ -81,7 +81,7 @@ object BasedonLinearSVC {
     if (args(0) != "Parameters tuning") {
       val paramGrid = new ParamGridBuilder()
         .addGrid(estimator.maxIter, Array(100))
-        .addGrid(estimator.regParam, Array(0.1))
+        .addGrid(estimator.regParam, Array(0.01))
         .build()
       /* Add paramGrid into Cross Validation */
       validator.setEstimatorParamMaps(paramGrid)
